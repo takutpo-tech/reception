@@ -5,19 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>受付アップロード</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; margin: 0; }
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; margin: 0; position: relative; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 24px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 15px; }
         input[type="file"] { display: block; width: 100%; padding: 10px; background: #f9f9f9; border: 1px dashed #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        button { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 10px; }
         button:hover { background-color: #27ae60; }
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        #loading { display: none; text-align: center; font-weight: bold; color: #34495e; margin-top: 15px; }
+        #status-group { text-align: center; margin-top: 15px; }
+        #loading { display: none; font-weight: bold; color: #34495e; }
+        
+        /* 【追加】5秒後に消える緑色の完了バナー */
+        #completion-banner {
+            display: none; /* 初期状態は非表示 */
+            position: fixed; /* 画面上部に固定 */
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%); /* 中央寄せ */
+            width: 90%;
+            max-width: 450px;
+            background-color: #2ecc71; /* 緑色 */
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000; /* 最前面に表示 */
+            opacity: 1;
+            transition: opacity 0.5s ease; /* フェードアウト用 */
+        }
     </style>
 </head>
 <body>
+
+<div id="completion-banner">
+    送信完了しました
+</div>
 
 <div class="container">
     <h2>受付アップロード</h2>
@@ -38,7 +64,9 @@
     </div>
     
     <button id="submitBtn" onclick="uploadImages()">データを送信する</button>
-    <div id="loading">処理中... しばらくお待ちください...</div>
+    <div id="status-group">
+        <div id="loading">処理中... しばらくお待ちください...</div>
+    </div>
 </div>
 
 <script>
@@ -56,6 +84,22 @@ function fileToBase64(file) {
     });
 }
 
+// バナーを表示して5秒後にフェードアウトさせる関数
+function showCompletionBanner() {
+    const banner = document.getElementById('completion-banner');
+    banner.style.display = 'block';
+    banner.style.opacity = '1';
+
+    // 5秒（5000ミリ秒）後にフェードアウトを開始
+    setTimeout(() => {
+        banner.style.opacity = '0';
+        // フェードアウトのCSSアニメーション（0.5秒）が完了したら、要素を完全に非表示にする
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 500);
+    }, 5000);
+}
+
 async function uploadImages() {
     const file1 = document.getElementById('file1').files[0];
     const file2 = document.getElementById('file2').files[0];
@@ -68,8 +112,11 @@ async function uploadImages() {
     
     const btn = document.getElementById('submitBtn');
     const loading = document.getElementById('loading');
+    const banner = document.getElementById('completion-banner');
+    
     btn.disabled = true;
     loading.style.display = 'block';
+    banner.style.display = 'none'; // 新しい送信時はバナーを隠す
     
     try {
         const base64_1 = await fileToBase64(file1);
@@ -79,7 +126,7 @@ async function uploadImages() {
             name: file1.name
         };
         
-        // 【重要】GASのセキュリティ制限を突破するため mode: 'no-cors' を指定してプレーンテキストで送信します
+        // GASのセキュリティ制限を突破するため mode: 'no-cors' で送信
         await fetch(GAS_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -89,8 +136,8 @@ async function uploadImages() {
             body: JSON.stringify(payload)
         });
         
-        // no-corsモードの場合、GASからの返事を受け取れない仕様のため、送信が完了した時点で成功とみなします
-        alert('画像のアップロード処理を送信しました！Googleドライブをご確認ください。');
+        // 【重要】ポップアップを廃止し、画面内の完了バナーを表示
+        showCompletionBanner();
         
         // 成功したらフォームをリセット
         document.getElementById('file1').value = '';
