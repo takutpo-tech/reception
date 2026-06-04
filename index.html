@@ -42,7 +42,7 @@
 </div>
 
 <script>
-// 【重要】ここに先ほどの新しい「全員公開のGASウェブアプリURL」を貼り付けてください
+// 最新のGASウェブアプリURL
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwDCFsKKq0jjl7zpqwrajP_4l6KB8R7sfqyiX0vqiQR06hOTAn1yla8sFVDrly8eGPrnw/exec";
 
 // 画像をBase64に変換する関数
@@ -72,35 +72,30 @@ async function uploadImages() {
     loading.style.display = 'block';
     
     try {
-        // 画像をすべて裏側でBase64形式に変換
         const base64_1 = await fileToBase64(file1);
-        const base64_2 = await fileToBase64(file2);
-        const base64_3 = await fileToBase64(file3);
         
-        // 【まずは受付票(1枚目)を送信する処理】
-        // ※複数枚を同時にVertex AIに投げる場合は、GAS側の処理に合わせてここを調整できます。
-        // まずは1枚目が確実に届くかテストするためのシンプルな通信です。
         const payload = {
             image: base64_1,
             name: file1.name
         };
         
-        const response = await fetch(GAS_URL, {
+        // 【重要】GASのセキュリティ制限を突破するため mode: 'no-cors' を指定してプレーンテキストで送信します
+        await fetch(GAS_URL, {
             method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
             body: JSON.stringify(payload)
         });
         
-        const result = await response.json();
+        // no-corsモードの場合、GASからの返事を受け取れない仕様のため、送信が完了した時点で成功とみなします
+        alert('画像のアップロード処理を送信しました！Googleドライブをご確認ください。');
         
-        if (result.status === 'success') {
-            alert(result.message);
-            // 成功したらフォームをリセット
-            document.getElementById('file1').value = '';
-            document.getElementById('file2').value = '';
-            document.getElementById('file3').value = '';
-        } else {
-            alert('エラーが発生しました: ' + result.message);
-        }
+        // 成功したらフォームをリセット
+        document.getElementById('file1').value = '';
+        document.getElementById('file2').value = '';
+        document.getElementById('file3').value = '';
         
     } catch (error) {
         alert('通信エラーが発生しました: ' + error.toString());
