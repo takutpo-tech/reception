@@ -73,7 +73,7 @@
 
 <script>
 // 最新のGASウェブアプリURL
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxn1VAyEzk5mkOreb4reXSRGKiuiP4-YTedr8l9yddLDpfdvaFtie6dc8_azz6LKoty6A/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbznyIzeyG2qAwm3b4lBVfdFc8anKveMTlmpjP6Q6NirbuvLnxoe712ec9xtZgN6cN0-bg/exec";
 
 // 画像をBase64に変換する関数
 function fileToBase64(file) {
@@ -106,6 +106,7 @@ async function uploadImages() {
     const file2 = document.getElementById('file2').files[0];
     const file3 = document.getElementById('file3').files[0];
     
+    // ① 受付票（必須）のチェック
     if (!file1) {
         alert('① 受付票の画像は必須です！');
         return;
@@ -120,11 +121,40 @@ async function uploadImages() {
     banner.style.display = 'none'; // 新しい送信時はバナーを隠す
     
     try {
+        // GASへ送る配列を準備
+        const filesToSend = [];
+
+        // ファイル1（必須）の処理
         const base64_1 = await fileToBase64(file1);
-        
-        const payload = {
+        filesToSend.push({
             image: base64_1,
-            name: file1.name
+            name: file1.name,
+            type: "1" // 受付票
+        });
+
+        // ファイル2（任意）があれば処理
+        if (file2) {
+            const base64_2 = await fileToBase64(file2);
+            filesToSend.push({
+                image: base64_2,
+                name: file2.name,
+                type: "2" // 商品画像1
+            });
+        }
+
+        // ファイル3（任意）があれば処理
+        if (file3) {
+            const base64_3 = await fileToBase64(file3);
+            filesToSend.push({
+                image: base64_3,
+                name: file3.name,
+                type: "3" // 商品画像2
+            });
+        }
+        
+        // 複数ファイルを配列に含めたオブジェクトをペイロードにする
+        const payload = {
+            files: filesToSend
         };
         
         // GASのセキュリティ制限を突破するため mode: 'no-cors' で送信
