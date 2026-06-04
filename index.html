@@ -17,20 +17,22 @@
         #status-group { text-align: center; margin-top: 15px; }
         #loading { display: none; font-weight: bold; color: #34495e; }
         
-        /* 【追加】5秒後に消える緑色の完了バナー */
+        /* 【改良】画面の真ん中に浮かび上がる完了バナー */
         #completion-banner {
             display: none; /* 初期状態は非表示 */
-            position: fixed; /* 画面上部に固定 */
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%); /* 中央寄せ */
-            width: 90%;
-            max-width: 450px;
-            background-color: #2ecc71; /* 緑色 */
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: fixed; /* 画面に固定 */
+            top: 50%; /* 上から50% */
+            left: 50%; /* 左から50% */
+            transform: translate(-50%, -50%); /* 完全に真ん中に合わせる */
+            width: 80%;
+            max-width: 350px;
+            background-color: white; /* 清潔感のある白背景 */
+            color: #2ecc71; /* 文字は緑色 */
+            border: 2px solid #2ecc71; /* 緑の枠線 */
+            padding: 25px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* 高級感のある影 */
+            font-size: 18px;
             font-weight: bold;
             text-align: center;
             z-index: 1000; /* 最前面に表示 */
@@ -42,7 +44,7 @@
 <body>
 
 <div id="completion-banner">
-    送信完了しました
+    ✨ 送信完了しました ✨
 </div>
 
 <div class="container">
@@ -84,16 +86,15 @@ function fileToBase64(file) {
     });
 }
 
-// バナーを表示して5秒後にフェードアウトさせる関数
+// バナーを中央に表示して5秒後にフェードアウトさせる関数
 function showCompletionBanner() {
     const banner = document.getElementById('completion-banner');
     banner.style.display = 'block';
     banner.style.opacity = '1';
 
-    // 5秒（5000ミリ秒）後にフェードアウトを開始
+    // 5秒（5000ミリ秒）後にフェードアウト開始
     setTimeout(() => {
         banner.style.opacity = '0';
-        // フェードアウトのCSSアニメーション（0.5秒）が完了したら、要素を完全に非表示にする
         setTimeout(() => {
             banner.style.display = 'none';
         }, 500);
@@ -136,7 +137,7 @@ async function uploadImages() {
             body: JSON.stringify(payload)
         });
         
-        // 【重要】ポップアップを廃止し、画面内の完了バナーを表示
+        // 中央の完了バナーを表示
         showCompletionBanner();
         
         // 成功したらフォームをリセット
