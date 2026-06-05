@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIリアルタイム査定</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+        
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #4a5568; }
+        
+        /* 6マスの画像グリッド */
+        .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #edf2f7; border: 2px dashed #cbd5e0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; transition: all 0.2s ease; }
+        .image-upload-box:hover { border-color: #4a5568; background-color: #e2e8f0; }
+        .image-upload-box span { font-size: 12px; color: #718096; margin-top: 4px; font-weight: bold; }
+        .image-upload-box .icon { font-size: 20px; color: #a0aec0; }
+        .image-upload-box input[type="file"] { display: none; }
+        .image-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        
+        textarea { width: 100%; height: 80px; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; resize: none; transition: border 0.2s; }
+        textarea:focus { border-color: #3182ce; outline: none; background: #fff; }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        #submitBtn { width: 100%; background-color: #3182ce; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-top: 10px; box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2); }
+        #submitBtn:hover { background-color: #2b6cb0; }
+        #submitBtn:disabled { background-color: #cbd5e0; cursor: not-allowed; box-shadow: none; }
+        
+        /* ローディングアニメーション */
+        #loading { display: none; text-align: center; margin-top: 20px; font-weight: bold; color: #4a5568; }
+        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(49,130,206,.3); border-radius: 50%; border-top-color: #3182ce; animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* ✨ 査定結果表示エリア */
+        #result-box { display: none; margin-top: 25px; padding: 20px; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .result-title { font-size: 18px; font-weight: bold; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; }
+        .result-item { margin-bottom: 15px; }
+        .result-label { font-size: 12px; color: #718096; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        .result-value { font-size: 16px; color: #1a202c; font-weight: 500; }
+        .price-highlight { font-size: 22px; color: #e53e3e; font-weight: bold; }
+        .stars { font-size: 20px; color: #ecc94b; }
+        
+        #marketBtn { display: block; width: 100%; text-align: center; box-sizing: border-box; background-color: #38a169; color: white; text-decoration: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; margin-top: 15px; transition: background 0.2s; }
+        #marketBtn:hover { background-color: #2f855a; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>AIリアルタイム査定</h2>
+    
+    <div class="form-group">
+        <label>📸 商品画像（最大6枚 / ①は必須）</label>
+        <div class="image-grid">
+            <div class="image-upload-box" onclick="triggerInput(1)">
+                <div class="icon" id="icon1">➕</div>
+                <span id="text1">①必須</span>
+                <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 1)">
+            </div>
+            <div class="image-upload-box" onclick="triggerInput(2)">
+                <div class="icon" id="icon2">➕</div>
+                <span id="text2">②任意</span>
+                <input type="file" id="file2" accept="image/*" onchange="previewImage(this, 2)">
+            </div>
+            <div class="image-upload-box" onclick="triggerInput(3)">
+                <div class="icon" id="icon3">➕</div>
+                <span id="text3">③任意</span>
+                <input type="file" id="file3" accept="image/*" onchange="previewImage(this, 3)">
+            </div>
+            <div class="image-upload-box" onclick="triggerInput(4)">
+                <div class="icon" id="icon4">➕</div>
+                <span id="text4">④任意</span>
+                <input type="file" id="file4" accept="image/*" onchange="previewImage(this, 4)">
+            </div>
+            <div class="image-upload-box" onclick="triggerInput(5)">
+                <div class="icon" id="icon5">➕</div>
+                <span id="text5">⑤任意</span>
+                <input type="file" id="file5" accept="image/*" onchange="previewImage(this, 5)">
+            </div>
+            <div class="image-upload-box" onclick="triggerInput(6)">
+                <div class="icon" id="icon6">➕</div>
+                <span id="text6">⑥任意</span>
+                <input type="file" id="file6" accept="image/*" onchange="previewImage(this, 6)">
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>💬 コメント・状態・原価（任意）</label>
+        <textarea id="userComment" placeholder="例：原価5000円、傷なし美品、箱付き"></textarea>
+    </div>
+    
+    <button id="submitBtn" onclick="startAnalysis()">🔍 分析スタート</button>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>AIが相場を冷徹に分析中...<br>しばらくお待ちください...</div>
+    </div>
+
+    <div id="result-box">
+        <div class="result-title">📊 査定分析結果</div>
+        <div class="result-item">
+            <div class="result-label">特定された商品名</div>
+            <div class="result-value" id="res-name">-</div>
+        </div>
+        <div class="result-item">
+            <div class="result-label">現実的な相場価格</div>
+            <div class="result-value price-highlight" id="res-price">-</div>
+        </div>
+        <div class="result-item">
+            <div class="result-label">ヤフオク出品オススメ度</div>
+            <div class="result-value stars" id="res-stars">-</div>
+        </div>
+        <div class="result-item">
+            <div class="result-label">プロバイヤーのアドバイス</div>
+            <div class="result-value" id="res-advice" style="line-height: 1.5; font-size: 14px; white-space: pre-wrap;">-</div>
+        </div>
+        <a id="marketBtn" href="#" target="_blank">📊 ヤフオク落札相場を直接確認</a>
+    </div>
+</div>
+
+<script>
+// ⚠️ 新しい査定専用のGASウェブアプリURLをここに貼る
+const GAS_SATEI_URL = "ここに新しいGASのウェブアプリURLを貼り付けます";
+
+function triggerInput(index) {
+    document.getElementById(`file${index}`).click();
+}
+
+// 画像が選ばれたら枠の中にプレビューを表示する関数
+function previewImage(input, index) {
+    const box = input.parentElement;
+    const file = input.files[0];
+    if (file) {
+        // すでに画像があれば消す
+        const existingImg = box.querySelector('img');
+        if (existingImg) existingImg.remove();
+        
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        box.appendChild(img);
+        document.getElementById(`icon${index}`).style.display = 'none';
+        document.getElementById(`text${index}`).style.display = 'none';
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+async function startAnalysis() {
+    const file1 = document.getElementById('file1').files[0];
+    if (!file1) {
+        alert('①番目の画像は必須です！');
+        return;
+    }
+    
+    const btn = document.getElementById('submitBtn');
+    const loading = document.getElementById('loading');
+    const resultBox = document.getElementById('result-box');
+    const comment = document.getElementById('userComment').value;
+    
+    btn.disabled = true;
+    loading.style.display = 'block';
+    resultBox.style.display = 'none'; // 前回の結果を隠す
+    
+    try {
+        const filesToSend = [];
+        // 6枚のファイルをループでチェックしてBase64化
+        for (let i = 1; i <= 6; i++) {
+            const f = document.getElementById(`file${i}`).files[0];
+            if (f) {
+                const b64 = await fileToBase64(f);
+                filesToSend.push({ image: b64, name: f.name });
+            }
+        }
+        
+        // GASへ送るデータ構造
+        const payload = {
+            comment: comment,
+            files: filesToSend
+        };
+        
+        // 💡 結果（JSON）を画面で受け取りたいため、ここは no-cors ではなく通常の fetch を使います
+        const response = await fetch(GAS_SATEI_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === "success") {
+            // 画面に結果をセット
+            document.getElementById('res-name').innerText = result.productName;
+            document.getElementById('res-price').innerText = result.price_range;
+            document.getElementById('res-stars').innerText = result.starRating;
+            document.getElementById('res-advice').innerText = result.advice;
+            
+            const mBtn = document.getElementById('marketBtn');
+            if (result.searchUrl) {
+                mBtn.href = result.searchUrl;
+                mBtn.style.display = 'block';
+            } else {
+                mBtn.style.display = 'none';
+            }
+            
+            // 結果エリアを表示
+            resultBox.style.display = 'block';
+            // 結果の位置までスムーズにスクロール
+            resultBox.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('分析エラー: ' + result.message);
+        }
+        
+    } catch (error) {
+        alert('通信エラーが発生しました: ' + error.toString());
+    } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+</script>
+
+</body>
+</html>
