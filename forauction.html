@@ -11,11 +11,9 @@
         
         label { display: block; font-weight: bold; margin-bottom: 12px; font-size: 14px; color: #4a5568; }
         
-        /* 画像選択ボタン */
         .upload-trigger-btn { width: 100%; background-color: #90cdf4; border: none; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: #1a202c; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(144, 205, 244, 0.3); }
         .upload-trigger-btn:hover { background-color: #63b3ed; }
         
-        /* 6マスの画像グリッド */
         .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
         .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .image-upload-box .icon { font-size: 22px; color: #cbd5e0; }
@@ -26,17 +24,14 @@
         
         .form-group { margin-bottom: 25px; }
         
-        /* 分析スタートボタン（薄い紫色） */
         #submitBtn { width: 100%; background-color: #b794f4; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-top: 10px; box-shadow: 0 4px 6px rgba(183, 148, 244, 0.3); }
         #submitBtn:hover { background-color: #9f7aea; }
         #submitBtn:disabled { background-color: #cbd5e0; cursor: not-allowed; box-shadow: none; }
         
-        /* ローディングアニメーション */
         #loading { display: none; text-align: center; margin-top: 20px; font-weight: bold; color: #4a5568; }
         .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(159,122,234,.3); border-radius: 50%; border-top-color: #9f7aea; animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* 査定結果表示エリア */
         #result-box { display: none; margin-top: 25px; padding: 20px; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .result-title { font-size: 18px; font-weight: bold; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; }
@@ -80,7 +75,7 @@
     
     <div id="loading">
         <div class="spinner"></div>
-        <div>AIが相場を冷徹に分析中...<br>しばらくお待ちください...</div>
+        <div id="loading-text">AIにデータを転送中...</div>
     </div>
 
     <div id="result-box">
@@ -106,17 +101,12 @@
 </div>
 
 <script>
-// ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbynAk9x1DHFbsp_Tr1EnW2xFjc7NuJof3U9DktXFjNnnjV6w41edceuNCOG5d86KfTj/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbyaKpywPTUPXoo-cGKwUKivruVLCd_PkyYsWSAXYKByVy0BZFhMGPJcpsIx12JjC3ks/exec";
 
 let selectedFilesArray = [];
 
 function handleFileSelect(input) {
     const files = Array.from(input.files);
-    
-    if (files.length > 6) {
-        alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
-    }
     selectedFilesArray = files.slice(0, 6);
     
     for (let i = 1; i <= 6; i++) {
@@ -137,7 +127,6 @@ function handleFileSelect(input) {
 
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
-        if (!file) resolve(null);
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = error => reject(error);
@@ -147,7 +136,7 @@ function fileToBase64(file) {
 
 async function startAnalysis() {
     if (selectedFilesArray.length === 0) {
-        alert('最低1枚は画像を「画像を選択」から選んでください！');
+        alert('最低1枚は画像を選んでください！');
         return;
     }
     
@@ -159,6 +148,7 @@ async function startAnalysis() {
     btn.disabled = true;
     loading.style.display = 'block';
     resultBox.style.display = 'none';
+    document.getElementById('loading-text').innerText = "AIへデータを送信中...";
     
     try {
         const filesToSend = [];
@@ -168,50 +158,74 @@ async function startAnalysis() {
             filesToSend.push({ image: b64, name: f.name });
         }
         
-        const payload = {
-            comment: comment,
-            files: filesToSend
-        };
-        
-        // 💡 決定的なセキュリティ対策：データをURLエンコード形式に包んで安全にPOSTする
+        const payload = { comment: comment, files: filesToSend };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
-        const response = await fetch(GAS_SATEI_URL, {
+        // ① まず重いデータを送る（GAS側は即受領を返して通信を切る）
+        await fetch(GAS_SATEI_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
             body: formBody
         });
         
-        const result = await response.json();
+        document.getElementById('loading-text').innerText = "AIが相場を冷徹に分析中...\n（30秒ほどかかります）";
         
-        if (result.status === "success") {
-            document.getElementById('res-name').innerText = result.productName;
-            document.getElementById('res-price').innerText = result.price_range;
-            document.getElementById('res-stars').innerText = result.starRating;
-            document.getElementById('res-advice').innerText = result.advice;
-            
-            const mBtn = document.getElementById('marketBtn');
-            if (result.searchUrl) {
-                mBtn.href = result.searchUrl;
-                mBtn.style.display = 'block';
-            } else {
-                mBtn.style.display = 'none';
-            }
-            
-            resultBox.style.display = 'block';
-            resultBox.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            alert('分析エラー: ' + result.message);
-        }
+        // ② 3秒おきにGASへ結果を回収しにいく（ポーリング開始）
+        checkResultInterval();
         
     } catch (error) {
-        alert('通信エラーが発生しました: ' + error.toString());
-    } finally {
+        alert('送信時にエラーが発生しました: ' + error.toString());
         btn.disabled = false;
         loading.style.display = 'none';
     }
+}
+
+// 💡 3秒おきに結果を問い合わせる関数
+let attemptCount = 0;
+function checkResultInterval() {
+    attemptCount = 0;
+    const interval = setInterval(async () => {
+        attemptCount++;
+        if (attemptCount > 30) { // 最大90秒待ってもダメならタイムアウト
+            clearInterval(interval);
+            alert("タイムアウトしました。スプレッドシートをご確認ください。");
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('loading').style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(GAS_SATEI_URL + "?check=true");
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                clearInterval(interval); // 成功したのでループ停止
+                
+                document.getElementById('res-name').innerText = result.productName;
+                document.getElementById('res-price').innerText = result.price_range;
+                document.getElementById('res-stars').innerText = result.starRating;
+                document.getElementById('res-advice').innerText = result.advice;
+                
+                const mBtn = document.getElementById('marketBtn');
+                if (result.searchUrl) {
+                    mBtn.href = result.searchUrl;
+                    mBtn.style.display = 'block';
+                } else {
+                    mBtn.style.display = 'none';
+                }
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                
+                const rBox = document.getElementById('result-box');
+                rBox.style.display = 'block';
+                rBox.scrollIntoView({ behavior: 'smooth' });
+            }
+            // "processing" の場合はまだAIが考えているので、次のループを待つ
+        } catch (e) {
+            // 通信エラーは無視して次をトライ
+        }
+    }, 3000);
 }
 </script>
 
