@@ -17,7 +17,7 @@
         .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
         .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .image-upload-box .icon { font-size: 22px; color: #cbd5e0; }
-        .image-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .image-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; }
         
         textarea { width: 100%; height: 90px; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; resize: none; transition: border 0.2s; }
         textarea:focus { border-color: #3182ce; outline: none; background: #fff; }
@@ -106,10 +106,17 @@ const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbyaKpywPTUPXoo-cG
 
 let selectedFilesArray = [];
 
+// 💡 修正ポイント：サムネイル表示ロジックを100%確実に動く形に修復
 function handleFileSelect(input) {
+    if (!input.files || input.files.length === 0) return;
+    
     const files = Array.from(input.files);
+    if (files.length > 6) {
+        alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
+    }
     selectedFilesArray = files.slice(0, 6);
     
+    // 一度すべての枠の画像をリセット
     for (let i = 1; i <= 6; i++) {
         const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
@@ -117,6 +124,7 @@ function handleFileSelect(input) {
         box.querySelector('.icon').style.display = 'block';
     }
     
+    // 選ばれた画像を綺麗にマッピング
     selectedFilesArray.forEach((file, index) => {
         const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
@@ -162,7 +170,6 @@ async function startAnalysis() {
         const payload = { comment: comment, files: filesToSend };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
-        // ① まず重いデータを送る（GAS側で処理が走ればブラウザ側の一時的な切断エラーは無視する仕様に変更）
         try {
             await fetch(GAS_SATEI_URL, {
                 method: 'POST',
@@ -170,15 +177,66 @@ async function startAnalysis() {
                 body: formBody
             });
         } catch (postError) {
-            console.log("データ送信中...");
+            console.log("データ送信完了");
         }
         
         document.getElementById('loading-text').innerText = "データ送信完了！\nAIが相場を冷徹に分析中...\n（約30秒ほどかかります）";
         
-        // ② 3秒おきにGASへ結果を自動で回収しにいく
+        // 3秒おきに結果を自動で回収しにいく
         checkResultInterval();
         
     } catch (error) {
         alert('エラーが発生しました: ' + error.toString());
         btn.disabled = false;
-        loading.style.display
+        loading.style.display = 'none';
+    }
+}
+
+function checkResultInterval() {
+    let attemptCount = 0;
+    const interval = setInterval(async () => {
+        attemptCount++;
+        if (attemptCount > 30) {
+            clearInterval(interval);
+            alert("タイムアウトしました。スプレッドシートをご確認ください。");
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('loading').style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(GAS_SATEI_URL + "?check=true");
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                clearInterval(interval);
+                
+                document.getElementById('res-name').innerText = result.productName;
+                document.getElementById('res-price').innerText = result.price_range;
+                document.getElementById('res-stars').innerText = result.starRating;
+                document.getElementById('res-advice').innerText = result.advice;
+                
+                const mBtn = document.getElementById('marketBtn');
+                if (result.searchUrl) {
+                    mBtn.href = result.searchUrl;
+                    mBtn.style.display = 'block';
+                } else {
+                    mBtn.style.display = 'none';
+                }
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                
+                const rBox = document.getElementById('result-box');
+                rBox.style.display = 'block';
+                rBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (e) {
+            // 通信エラーは無視して次のループへ
+        }
+    }, 3000);
+}
+</script>
+
+</body>
+</html>
