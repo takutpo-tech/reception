@@ -8,30 +8,22 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
-        
         label { display: block; font-weight: bold; margin-bottom: 12px; font-size: 14px; color: #4a5568; }
-        
         .upload-trigger-btn { width: 100%; background-color: #90cdf4; border: none; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: #1a202c; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(144, 205, 244, 0.3); }
         .upload-trigger-btn:hover { background-color: #63b3ed; }
-        
         .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
         .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .image-upload-box .icon { font-size: 22px; color: #cbd5e0; }
         .image-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; }
-        
         textarea { width: 100%; height: 90px; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; resize: none; transition: border 0.2s; }
         textarea:focus { border-color: #3182ce; outline: none; background: #fff; }
-        
         .form-group { margin-bottom: 25px; }
-        
         #submitBtn { width: 100%; background-color: #b794f4; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-top: 10px; box-shadow: 0 4px 6px rgba(183, 148, 244, 0.3); }
         #submitBtn:hover { background-color: #9f7aea; }
         #submitBtn:disabled { background-color: #cbd5e0; cursor: not-allowed; box-shadow: none; }
-        
         #loading { display: none; text-align: center; margin-top: 20px; font-weight: bold; color: #4a5568; }
         .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(159,122,234,.3); border-radius: 50%; border-top-color: #9f7aea; animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
         #result-box { display: none; margin-top: 25px; padding: 20px; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .result-title { font-size: 18px; font-weight: bold; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; }
@@ -40,7 +32,6 @@
         .result-value { font-size: 16px; color: #1a202c; font-weight: 500; }
         .price-highlight { font-size: 22px; color: #e53e3e; font-weight: bold; }
         .stars { font-size: 20px; color: #ecc94b; }
-        
         #marketBtn { display: block; width: 100%; text-align: center; box-sizing: border-box; background-color: #38a169; color: white; text-decoration: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; margin-top: 15px; transition: background 0.2s; }
         #marketBtn:hover { background-color: #2f855a; }
     </style>
@@ -102,13 +93,12 @@
 
 <script>
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbzD_Dwos_8nXKcJdztBBUvtck42wAmvTj6a3N17ULSafWvmHjrhk1o3ngYeAamUSCeo/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbyB_xD0gV1IUJjfwoQICZU41Q8oYYQdQiLrMmjy7OreyDtYoe6oyLiaB0TLMdl4Du3g/exec";
 
 let selectedFilesArray = [];
 
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
-    
     const files = Array.from(input.files);
     if (files.length > 6) {
         alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
@@ -131,8 +121,8 @@ function handleFileSelect(input) {
     });
 }
 
-// 💡 修正ポイント：Base64テキストではなく、生の「Blobファイル」として縮小画像を切り出すロジック
-function resizeToBlob(file) {
+// 💡 縮小してBase64にする安定・快速ロジック
+function resizeAndGetBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -144,25 +134,17 @@ function resizeToBlob(file) {
                 const max_size = 1200;
 
                 if (width > height) {
-                    if (width > max_size) {
-                        height *= max_size / width;
-                        width = max_size;
-                    }
+                    if (width > max_size) { height *= max_size / width; width = max_size; }
                 } else {
-                    if (height > max_size) {
-                        width *= max_size / height;
-                        height = max_size;
-                    }
+                    if (height > max_size) { width *= max_size / height; height = max_size; }
                 }
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // テキスト変換せず、生のバイナリBlobとして出力（データサイズが1.3倍に太るのを防ぐ）
-                canvas.toBlob((blob) => {
-                    resolve(blob);
-                }, 'image/jpeg', 0.8);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(dataUrl.split(',')[1]);
             };
             img.src = e.target.result;
         };
@@ -189,22 +171,21 @@ async function startAnalysis() {
     document.getElementById('loading-text').innerText = "画像をアップロード中...";
     
     try {
-        // 💡 修正ポイント：FormDataを使って生のファイルをそのまま詰め込む（最速送信）
-        const formData = new FormData();
-        formData.append('comment', comment);
-
+        const filesToSend = [];
         for (let i = 0; i < selectedFilesArray.length; i++) {
             const f = selectedFilesArray[i];
-            const compressedBlob = await resizeToBlob(f);
-            // file1, file2... という名前で生の画像バイナリを添付
-            formData.append(`file${i + 1}`, compressedBlob, `image_${i + 1}.jpg`);
+            const b64 = await resizeAndGetBase64(f);
+            filesToSend.push({ image: b64, name: f.name });
         }
         
+        const payload = { comment: comment, files: filesToSend };
+        const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
+        
         try {
-            // FormData形式でGASへ爆速直送送信
             await fetch(GAS_SATEI_URL, {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: formBody
             });
         } catch (postError) {
             console.log("データ送信完了");
