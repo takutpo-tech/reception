@@ -7,12 +7,11 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        /* 💡 タイトルを「ヤフオク商品分析」に変更 */
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
         
         label { display: block; font-weight: bold; margin-bottom: 12px; font-size: 14px; color: #4a5568; }
         
-        /* 💡 ボタンを薄い青（水色）に変更、文字色を黒（#1a202c）に指定 */
+        /* 画像選択ボタン */
         .upload-trigger-btn { width: 100%; background-color: #90cdf4; border: none; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: #1a202c; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(144, 205, 244, 0.3); }
         .upload-trigger-btn:hover { background-color: #63b3ed; }
         
@@ -58,7 +57,7 @@
     
     <div class="form-group">
         <div class="upload-trigger-btn" onclick="document.getElementById('bulkFiles').click()">
-            📸 画像を選択する（最大6枚）
+            📸 画像を選択（最大6枚）
         </div>
         <input type="file" id="bulkFiles" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(this)">
 
@@ -74,7 +73,7 @@
     
     <div class="form-group">
         <label>💬 コメント（状態・暫定卸値 etc.）【任意】</label>
-        <textarea id="userComment" placeholder="例：原価5000円、傷なし美品、箱付き"></textarea>
+        <textarea id="userComment" placeholder="例：暫定卸値5000円、傷なし美品、箱付き"></textarea>
     </div>
     
     <button id="submitBtn" onclick="startAnalysis()">🔍 分析スタート</button>
@@ -148,7 +147,7 @@ function fileToBase64(file) {
 
 async function startAnalysis() {
     if (selectedFilesArray.length === 0) {
-        alert('最低1枚は画像を「画像を選択する」から選んでください！');
+        alert('最低1枚は画像を「画像を選択」から選んでください！');
         return;
     }
     
