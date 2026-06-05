@@ -75,7 +75,7 @@
     
     <div id="loading">
         <div class="spinner"></div>
-        <div id="loading-text">AIにデータを転送中...</div>
+        <div id="loading-text">画像をアップロード中...</div>
     </div>
 
     <div id="result-box">
@@ -154,7 +154,9 @@ async function startAnalysis() {
     btn.disabled = true;
     loading.style.display = 'block';
     resultBox.style.display = 'none';
-    document.getElementById('loading-text').innerText = "AIへデータを送信中...";
+    
+    // 💡 修正：初期表示を実態に合わせて「画像アップロード中」に
+    document.getElementById('loading-text').innerText = "画像をアップロード中...\n（最大6枚送信しています）";
     
     try {
         const filesToSend = [];
@@ -177,7 +179,8 @@ async function startAnalysis() {
             console.log("データ送信完了");
         }
         
-        document.getElementById('loading-text').innerText = "データ送信完了！\nAIが相場を冷徹に分析中...\n（約30秒ほどかかります）";
+        // 💡 修正：ご指定いただいた文言へ変更（ここからは一瞬で終わります）
+        document.getElementById('loading-text').innerText = "データ送信完了！\nAIが分析中...";
         
         checkResultInterval();
         
