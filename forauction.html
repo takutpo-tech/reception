@@ -107,7 +107,7 @@
 
 <script>
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbw8H5lDKqrLPbAptVIQrleksKqXeIVeUvDPgkh7oGJ0G8E58QCFqTA5LkMI7NsQNpmY/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbynAk9x1DHFbsp_Tr1EnW2xFjc7NuJof3U9DktXFjNnnjV6w41edceuNCOG5d86KfTj/exec";
 
 let selectedFilesArray = [];
 
@@ -173,11 +173,15 @@ async function startAnalysis() {
             files: filesToSend
         };
         
-        // 💡 対策：通信形式を「text/plain」に変えることで、ブラウザのCORSブロック（Load failed）を完全に回避します
+        // 💡 決定的なセキュリティ対策：データをURLエンコード形式に包んで安全にPOSTする
+        const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
+        
         const response = await fetch(GAS_SATEI_URL, {
             method: 'POST',
-            contentType: 'text/plain',
-            body: JSON.stringify(payload)
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: formBody
         });
         
         const result = await response.json();
