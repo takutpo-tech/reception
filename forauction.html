@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIリアルタイム査定</title>
+    <title>ヤフオク商品分析</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        /* 💡 タイトルを「ヤフオク商品分析」に変更 */
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
         
         label { display: block; font-weight: bold; margin-bottom: 12px; font-size: 14px; color: #4a5568; }
         
-        /* 💡 ボタンを青色に変更 */
-        .upload-trigger-btn { width: 100%; background-color: #3182ce; border: none; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: white; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2); }
-        .upload-trigger-btn:hover { background-color: #2b6cb0; }
+        /* 💡 ボタンを薄い青（水色）に変更、文字色を黒（#1a202c）に指定 */
+        .upload-trigger-btn { width: 100%; background-color: #90cdf4; border: none; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: #1a202c; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(144, 205, 244, 0.3); }
+        .upload-trigger-btn:hover { background-color: #63b3ed; }
         
         /* 6マスの画像グリッド */
         .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
@@ -26,7 +27,7 @@
         
         .form-group { margin-bottom: 25px; }
         
-        /* 💡 分析スタートボタンを「薄い紫色」に変更 */
+        /* 分析スタートボタン（薄い紫色） */
         #submitBtn { width: 100%; background-color: #b794f4; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-top: 10px; box-shadow: 0 4px 6px rgba(183, 148, 244, 0.3); }
         #submitBtn:hover { background-color: #9f7aea; }
         #submitBtn:disabled { background-color: #cbd5e0; cursor: not-allowed; box-shadow: none; }
@@ -53,7 +54,7 @@
 <body>
 
 <div class="container">
-    <h2>AIリアルタイム査定</h2>
+    <h2>ヤフオク商品分析</h2>
     
     <div class="form-group">
         <div class="upload-trigger-btn" onclick="document.getElementById('bulkFiles').click()">
@@ -119,7 +120,6 @@ function handleFileSelect(input) {
     }
     selectedFilesArray = files.slice(0, 6);
     
-    // リセット
     for (let i = 1; i <= 6; i++) {
         const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
@@ -127,7 +127,6 @@ function handleFileSelect(input) {
         box.querySelector('.icon').style.display = 'block';
     }
     
-    // プレビュー表示
     selectedFilesArray.forEach((file, index) => {
         const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
