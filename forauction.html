@@ -131,10 +131,40 @@ function handleFileSelect(input) {
     });
 }
 
-function fileToBase64(file) {
+// 💡 修正ポイント：裏側で画像を最大1200pxに自動縮小して軽量化するロジックを搭載
+function resizeAndGetBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const max_size = 1200; // AI分析に最適な最大サイズ（これ以上は落とす）
+
+                if (width > height) {
+                    if (width > max_size) {
+                        height *= max_size / width;
+                        width = max_size;
+                    }
+                } else {
+                    if (height > max_size) {
+                        width *= max_size / height;
+                        height = max_size;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // JPEG形式、画質80%に落としてデータ量を劇的に削る
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(dataUrl.split(',')[1]);
+            };
+            img.src = e.target.result;
+        };
         reader.onerror = error => reject(error);
         reader.readAsDataURL(file);
     });
@@ -155,14 +185,14 @@ async function startAnalysis() {
     loading.style.display = 'block';
     resultBox.style.display = 'none';
     
-    // 💡 修正：初期表示を実態に合わせて「画像アップロード中」に
-    document.getElementById('loading-text').innerText = "画像をアップロード中...\n（最大6枚送信しています）";
+    document.getElementById('loading-text').innerText = "画像をアップロード中...";
     
     try {
         const filesToSend = [];
         for (let i = 0; i < selectedFilesArray.length; i++) {
             const f = selectedFilesArray[i];
-            const b64 = await fileToBase64(f);
+            // 💡 ここで縮小処理を通す（送信時間をガッツリ短縮）
+            const b64 = await resizeAndGetBase64(f);
             filesToSend.push({ image: b64, name: f.name });
         }
         
@@ -179,7 +209,7 @@ async function startAnalysis() {
             console.log("データ送信完了");
         }
         
-        // 💡 修正：ご指定いただいた文言へ変更（ここからは一瞬で終わります）
+        // ご指定通り「（最大6枚送信しています）」を完全に削除
         document.getElementById('loading-text').innerText = "データ送信完了！\nAIが分析中...";
         
         checkResultInterval();
