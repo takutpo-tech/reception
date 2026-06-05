@@ -101,6 +101,7 @@
 </div>
 
 <script>
+// ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
 const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbyaKpywPTUPXoo-cGKwUKivruVLCd_PkyYsWSAXYKByVy0BZFhMGPJcpsIx12JjC3ks/exec";
 
 let selectedFilesArray = [];
@@ -161,73 +162,23 @@ async function startAnalysis() {
         const payload = { comment: comment, files: filesToSend };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
-        // ① まず重いデータを送る（GAS側は即受領を返して通信を切る）
-        await fetch(GAS_SATEI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-            body: formBody
-        });
+        // ① まず重いデータを送る（GAS側で処理が走ればブラウザ側の一時的な切断エラーは無視する仕様に変更）
+        try {
+            await fetch(GAS_SATEI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: formBody
+            });
+        } catch (postError) {
+            console.log("データ送信中...");
+        }
         
-        document.getElementById('loading-text').innerText = "AIが相場を冷徹に分析中...\n（30秒ほどかかります）";
+        document.getElementById('loading-text').innerText = "データ送信完了！\nAIが相場を冷徹に分析中...\n（約30秒ほどかかります）";
         
-        // ② 3秒おきにGASへ結果を回収しにいく（ポーリング開始）
+        // ② 3秒おきにGASへ結果を自動で回収しにいく
         checkResultInterval();
         
     } catch (error) {
-        alert('送信時にエラーが発生しました: ' + error.toString());
+        alert('エラーが発生しました: ' + error.toString());
         btn.disabled = false;
-        loading.style.display = 'none';
-    }
-}
-
-// 💡 3秒おきに結果を問い合わせる関数
-let attemptCount = 0;
-function checkResultInterval() {
-    attemptCount = 0;
-    const interval = setInterval(async () => {
-        attemptCount++;
-        if (attemptCount > 30) { // 最大90秒待ってもダメならタイムアウト
-            clearInterval(interval);
-            alert("タイムアウトしました。スプレッドシートをご確認ください。");
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('loading').style.display = 'none';
-            return;
-        }
-
-        try {
-            const response = await fetch(GAS_SATEI_URL + "?check=true");
-            const result = await response.json();
-            
-            if (result.status === "success") {
-                clearInterval(interval); // 成功したのでループ停止
-                
-                document.getElementById('res-name').innerText = result.productName;
-                document.getElementById('res-price').innerText = result.price_range;
-                document.getElementById('res-stars').innerText = result.starRating;
-                document.getElementById('res-advice').innerText = result.advice;
-                
-                const mBtn = document.getElementById('marketBtn');
-                if (result.searchUrl) {
-                    mBtn.href = result.searchUrl;
-                    mBtn.style.display = 'block';
-                } else {
-                    mBtn.style.display = 'none';
-                }
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
-                
-                const rBox = document.getElementById('result-box');
-                rBox.style.display = 'block';
-                rBox.scrollIntoView({ behavior: 'smooth' });
-            }
-            // "processing" の場合はまだAIが考えているので、次のループを待つ
-        } catch (e) {
-            // 通信エラーは無視して次をトライ
-        }
-    }, 3000);
-}
-</script>
-
-</body>
-</html>
+        loading.style.display
