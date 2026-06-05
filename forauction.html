@@ -79,13 +79,13 @@
     </div>
 
     <div id="result-box">
-        <div class="result-title">📊 査定分析結果</div>
+        <div class="result-title">📊 分析結果</div>
         <div class="result-item">
             <div class="result-label">特定された商品名</div>
             <div class="result-value" id="res-name">-</div>
         </div>
         <div class="result-item">
-            <div class="result-label">現実的な相場価格</div>
+            <div class="result-label">相場価格（詳細は下記リンクよりご確認ください）</div>
             <div class="result-value price-highlight" id="res-price">-</div>
         </div>
         <div class="result-item">
@@ -93,7 +93,7 @@
             <div class="result-value stars" id="res-stars">-</div>
         </div>
         <div class="result-item">
-            <div class="result-label">プロバイヤーのアドバイス</div>
+            <div class="result-label">アドバイス</div>
             <div class="result-value" id="res-advice" style="line-height: 1.5; font-size: 14px; white-space: pre-wrap;">-</div>
         </div>
         <a id="marketBtn" href="#" target="_blank">📊 ヤフオク落札相場を直接確認</a>
@@ -102,11 +102,10 @@
 
 <script>
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbyaKpywPTUPXoo-cGKwUKivruVLCd_PkyYsWSAXYKByVy0BZFhMGPJcpsIx12JjC3ks/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbzsuUSgVS4xEAv3qr3enCuhi0yh9NbeV9Q6SrfKX1_fRWgHnT_tK_DoWwQoDRc_914/exec";
 
 let selectedFilesArray = [];
 
-// 💡 修正ポイント：サムネイル表示ロジックを100%確実に動く形に修復
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
     
@@ -116,7 +115,6 @@ function handleFileSelect(input) {
     }
     selectedFilesArray = files.slice(0, 6);
     
-    // 一度すべての枠の画像をリセット
     for (let i = 1; i <= 6; i++) {
         const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
@@ -124,7 +122,6 @@ function handleFileSelect(input) {
         box.querySelector('.icon').style.display = 'block';
     }
     
-    // 選ばれた画像を綺麗にマッピング
     selectedFilesArray.forEach((file, index) => {
         const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
@@ -182,7 +179,6 @@ async function startAnalysis() {
         
         document.getElementById('loading-text').innerText = "データ送信完了！\nAIが相場を冷徹に分析中...\n（約30秒ほどかかります）";
         
-        // 3秒おきに結果を自動で回収しにいく
         checkResultInterval();
         
     } catch (error) {
@@ -232,7 +228,7 @@ function checkResultInterval() {
                 rBox.scrollIntoView({ behavior: 'smooth' });
             }
         } catch (e) {
-            // 通信エラーは無視して次のループへ
+            // エラー時は次をトライ
         }
     }, 3000);
 }
