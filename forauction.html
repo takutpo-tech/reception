@@ -11,14 +11,19 @@
         
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #4a5568; }
         
+        /* 💡 一括アップロードボタンの装飾 */
+        .upload-trigger-btn { width: 100%; background-color: #f7fafc; border: 2px dashed #cbd5e0; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; color: #4a5568; cursor: pointer; transition: all 0.2s; margin-bottom: 15px; box-sizing: border-box; }
+        .upload-trigger-btn:hover { background-color: #edf2f7; border-color: #a0aec0; }
+        
         /* 6マスの画像グリッド */
         .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #edf2f7; border: 2px dashed #cbd5e0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; transition: all 0.2s ease; }
-        .image-upload-box:hover { border-color: #4a5568; background-color: #e2e8f0; }
-        .image-upload-box span { font-size: 12px; color: #718096; margin-top: 4px; font-weight: bold; }
-        .image-upload-box .icon { font-size: 20px; color: #a0aec0; }
-        .image-upload-box input[type="file"] { display: none; }
+        .image-upload-box { position: relative; width: 100%; aspect-ratio: 1 / 1; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .image-upload-box span { font-size: 12px; color: #a0aec0; margin-top: 4px; }
+        .image-upload-box .icon { font-size: 18px; color: #cbd5e0; }
         .image-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        
+        /* 💡 選択された画像の枚数バッジ */
+        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 10; }
         
         textarea { width: 100%; height: 80px; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; resize: none; transition: border 0.2s; }
         textarea:focus { border-color: #3182ce; outline: none; background: #fff; }
@@ -34,7 +39,7 @@
         .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(49,130,206,.3); border-radius: 50%; border-top-color: #3182ce; animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* ✨ 査定結果表示エリア */
+        /* 査定結果表示エリア */
         #result-box { display: none; margin-top: 25px; padding: 20px; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .result-title { font-size: 18px; font-weight: bold; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; }
@@ -55,37 +60,19 @@
     
     <div class="form-group">
         <label>📸 商品画像（最大6枚 / ①は必須）</label>
+        
+        <div class="upload-trigger-btn" onclick="document.getElementById('bulkFiles').click()">
+            📸 画像をまとめて選択する（最大6枚）
+        </div>
+        <input type="file" id="bulkFiles" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(this)">
+
         <div class="image-grid">
-            <div class="image-upload-box" onclick="triggerInput(1)">
-                <div class="icon" id="icon1">➕</div>
-                <span id="text1">①必須</span>
-                <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 1)">
-            </div>
-            <div class="image-upload-box" onclick="triggerInput(2)">
-                <div class="icon" id="icon2">➕</div>
-                <span id="text2">②任意</span>
-                <input type="file" id="file2" accept="image/*" onchange="previewImage(this, 2)">
-            </div>
-            <div class="image-upload-box" onclick="triggerInput(3)">
-                <div class="icon" id="icon3">➕</div>
-                <span id="text3">③任意</span>
-                <input type="file" id="file3" accept="image/*" onchange="previewImage(this, 3)">
-            </div>
-            <div class="image-upload-box" onclick="triggerInput(4)">
-                <div class="icon" id="icon4">➕</div>
-                <span id="text4">④任意</span>
-                <input type="file" id="file4" accept="image/*" onchange="previewImage(this, 4)">
-            </div>
-            <div class="image-upload-box" onclick="triggerInput(5)">
-                <div class="icon" id="icon5">➕</div>
-                <span id="text5">⑤任意</span>
-                <input type="file" id="file5" accept="image/*" onchange="previewImage(this, 5)">
-            </div>
-            <div class="image-upload-box" onclick="triggerInput(6)">
-                <div class="icon" id="icon6">➕</div>
-                <span id="text6">⑥任意</span>
-                <input type="file" id="file6" accept="image/*" onchange="previewImage(this, 6)">
-            </div>
+            <div class="image-upload-box" id="box1"><div class="badge">①必須</div><div class="icon">📷</div><span>未選択</span></div>
+            <div class="image-upload-box" id="box2"><div class="badge">②</div><div class="icon">📷</div><span>未選択</span></div>
+            <div class="image-upload-box" id="box3"><div class="badge">③</div><div class="icon">📷</div><span>未選択</span></div>
+            <div class="image-upload-box" id="box4"><div class="badge">④</div><div class="icon">📷</div><span>未選択</span></div>
+            <div class="image-upload-box" id="box5"><div class="badge">⑤</div><div class="icon">📷</div><span>未選択</span></div>
+            <div class="image-upload-box" id="box6"><div class="badge">⑥</div><div class="icon">📷</div><span>未選択</span></div>
         </div>
     </div>
     
@@ -127,25 +114,37 @@
 // ⚠️ 新しい査定専用のGASウェブアプリURLをここに貼る
 const GAS_SATEI_URL = "ここに新しいGASのウェブアプリURLを貼り付けます";
 
-function triggerInput(index) {
-    document.getElementById(`file${index}`).click();
-}
+// 💡 選択されたファイルを保持するグローバル配列
+let selectedFilesArray = [];
 
-// 画像が選ばれたら枠の中にプレビューを表示する関数
-function previewImage(input, index) {
-    const box = input.parentElement;
-    const file = input.files[0];
-    if (file) {
-        // すでに画像があれば消す
+// まとめて選択されたときの処理
+function handleFileSelect(input) {
+    const files = Array.from(input.files);
+    
+    // 最大6枚に制限
+    if (files.length > 6) {
+        alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
+    }
+    selectedFilesArray = files.slice(0, 6);
+    
+    // 一旦プレビューをきれいにリセット
+    for (let i = 1; i <= 6; i++) {
+        const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
         if (existingImg) existingImg.remove();
-        
+        box.querySelector('.icon').style.display = 'block';
+        box.querySelector('span').style.display = 'block';
+    }
+    
+    // 選択された画像をマスにハメ込んでいく
+    selectedFilesArray.forEach((file, index) => {
+        const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
         box.appendChild(img);
-        document.getElementById(`icon${index}`).style.display = 'none';
-        document.getElementById(`text${index}`).style.display = 'none';
-    }
+        box.querySelector('.icon').style.display = 'none';
+        box.querySelector('span').style.display = 'none';
+    });
 }
 
 function fileToBase64(file) {
@@ -159,9 +158,9 @@ function fileToBase64(file) {
 }
 
 async function startAnalysis() {
-    const file1 = document.getElementById('file1').files[0];
-    if (!file1) {
-        alert('①番目の画像は必須です！');
+    // 1枚目（必須）があるかチェック
+    if (selectedFilesArray.length === 0) {
+        alert('最低1枚は画像を「まとめて選択」から選んでください！');
         return;
     }
     
@@ -172,26 +171,22 @@ async function startAnalysis() {
     
     btn.disabled = true;
     loading.style.display = 'block';
-    resultBox.style.display = 'none'; // 前回の結果を隠す
+    resultBox.style.display = 'none';
     
     try {
         const filesToSend = [];
-        // 6枚のファイルをループでチェックしてBase64化
-        for (let i = 1; i <= 6; i++) {
-            const f = document.getElementById(`file${i}`).files[0];
-            if (f) {
-                const b64 = await fileToBase64(f);
-                filesToSend.push({ image: b64, name: f.name });
-            }
+        // 配列に入っているファイルをBase64に一括変換
+        for (let i = 0; i < selectedFilesArray.length; i++) {
+            const f = selectedFilesArray[i];
+            const b64 = await fileToBase64(f);
+            filesToSend.push({ image: b64, name: f.name });
         }
         
-        // GASへ送るデータ構造
         const payload = {
             comment: comment,
             files: filesToSend
         };
         
-        // 💡 結果（JSON）を画面で受け取りたいため、ここは no-cors ではなく通常の fetch を使います
         const response = await fetch(GAS_SATEI_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
@@ -200,7 +195,6 @@ async function startAnalysis() {
         const result = await response.json();
         
         if (result.status === "success") {
-            // 画面に結果をセット
             document.getElementById('res-name').innerText = result.productName;
             document.getElementById('res-price').innerText = result.price_range;
             document.getElementById('res-stars').innerText = result.starRating;
@@ -214,9 +208,7 @@ async function startAnalysis() {
                 mBtn.style.display = 'none';
             }
             
-            // 結果エリアを表示
             resultBox.style.display = 'block';
-            // 結果の位置までスムーズにスクロール
             resultBox.scrollIntoView({ behavior: 'smooth' });
         } else {
             alert('分析エラー: ' + result.message);
