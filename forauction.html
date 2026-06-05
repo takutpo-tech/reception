@@ -102,7 +102,7 @@
 
 <script>
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbx4QIxaEZ31zJIFAptHINXvH12dt80o7-VkZ0slymmwSM5ur-Xj1qk8ELIVyfhxtXCP/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbzyO5iW6MWGLAfyMEIbmE4fm30I9cYU3aYQ4GXszGzehjfTBrfLtYM1Aq6TtFQDX8mu/exec";
 
 let selectedFilesArray = [];
 
@@ -131,8 +131,8 @@ function handleFileSelect(input) {
     });
 }
 
-// 💡 修正ポイント：裏側で画像を最大1200pxに自動縮小して軽量化するロジックを搭載
-function resizeAndGetBase64(file) {
+// 💡 修正ポイント：Base64テキストではなく、生の「Blobファイル」として縮小画像を切り出すロジック
+function resizeToBlob(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -141,7 +141,7 @@ function resizeAndGetBase64(file) {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const max_size = 1200; // AI分析に最適な最大サイズ（これ以上は落とす）
+                const max_size = 1200;
 
                 if (width > height) {
                     if (width > max_size) {
@@ -159,9 +159,10 @@ function resizeAndGetBase64(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // JPEG形式、画質80%に落としてデータ量を劇的に削る
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                resolve(dataUrl.split(',')[1]);
+                // テキスト変換せず、生のバイナリBlobとして出力（データサイズが1.3倍に太るのを防ぐ）
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/jpeg', 0.8);
             };
             img.src = e.target.result;
         };
@@ -188,28 +189,27 @@ async function startAnalysis() {
     document.getElementById('loading-text').innerText = "画像をアップロード中...";
     
     try {
-        const filesToSend = [];
+        // 💡 修正ポイント：FormDataを使って生のファイルをそのまま詰め込む（最速送信）
+        const formData = new FormData();
+        formData.append('comment', comment);
+
         for (let i = 0; i < selectedFilesArray.length; i++) {
             const f = selectedFilesArray[i];
-            // 💡 ここで縮小処理を通す（送信時間をガッツリ短縮）
-            const b64 = await resizeAndGetBase64(f);
-            filesToSend.push({ image: b64, name: f.name });
+            const compressedBlob = await resizeToBlob(f);
+            // file1, file2... という名前で生の画像バイナリを添付
+            formData.append(`file${i + 1}`, compressedBlob, `image_${i + 1}.jpg`);
         }
         
-        const payload = { comment: comment, files: filesToSend };
-        const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
-        
         try {
+            // FormData形式でGASへ爆速直送送信
             await fetch(GAS_SATEI_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body: formBody
+                body: formData
             });
         } catch (postError) {
             console.log("データ送信完了");
         }
         
-        // ご指定通り「（最大6枚送信しています）」を完全に削除
         document.getElementById('loading-text').innerText = "データ送信完了！\nAIが分析中...";
         
         checkResultInterval();
