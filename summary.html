@@ -5,43 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>本日の買取サマリー</title>
     <style>
-        /* 画面全体の基本設定 */
+        /* 画面全体の基本設定：余白をなくし背景をシンプルに */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f4f6f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background-color: #ffffff;
             margin: 0;
-            padding: 8px; /* スマホの横幅を広く使うために余白を最小限に */
-            color: #333;
+            padding: 20px 16px;
+            color: #000000;
         }
         .container {
-            max-width: 600px; /* 6列綺麗に収めるための最大幅 */
+            max-width: 500px;
             margin: 0 auto;
-            background: #fff;
-            padding: 12px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        h2 {
-            font-size: 16px;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 12px;
-            color: #1a73e8;
-            border-bottom: 2px solid #e8f0fe;
-            padding-bottom: 8px;
-        }
+        
         /* ローディング画面 */
         #loading {
             text-align: center;
             padding: 40px 0;
-            font-size: 13px;
+            font-size: 14px;
             color: #666;
         }
         .spinner {
             width: 26px;
             height: 26px;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #1a73e8;
+            border-top: 3px solid #000000;
             border-radius: 50%;
             margin: 0 auto 12px;
             animation: spin 1s linear infinite;
@@ -50,115 +38,247 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        /* 6列表示をスマホにジャストフィットさせるためのテーブル設定 */
-        .table-wrapper {
+
+        /* 💡イメージ通りに極限まで調整したカスタムレイアウト */
+        .summary-box {
+            display: none; /* 初期状態は非表示 */
             width: 100%;
-            overflow-x: auto; /* 万が一はみ出しても横スクロールできるようにガード */
-            -webkit-overflow-scrolling: touch;
         }
+
+        /* 日付エリアのスタイル */
+        .date-header {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+
+        /* テーブルの共通設定 */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px; /* 6列が1画面に収まるよう、文字サイズを調整 */
-            letter-spacing: -0.5px; /* 文字の間隔をわずかに詰めて視認性確保 */
+            margin-bottom: 28px;
         }
-        th, td {
-            border: 1px solid #dadce0;
-            padding: 8px 4px; /* 左右の余白を詰めて横幅を確保 */
-            text-align: center;
-            white-space: nowrap; /* 変なところで改行してガタガタになるのを防ぐ */
+        
+        /* 上下の太い黒線 */
+        .main-table {
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000;
         }
-        th {
-            background-color: #f8f9fa;
-            color: #4f5b66;
-            font-weight: 600;
+
+        td {
+            padding: 12px 6px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000000;
         }
-        /* 数字用のセルスタイル */
-        .number-cell {
+
+        /* 細いドットの区切り線 */
+        .main-table td {
+            border-bottom: 1px dotted #999999;
+        }
+        .main-table tr:last-child td {
+            border-bottom: none; /* 一番下の行のドット線は消す */
+        }
+
+        /* 列ごとの配置・幅の固定（文字と数字が綺麗に揃うように調整） */
+        .col-label {
+            text-align: left;
+            width: 30%;
+            padding-left: 35px; /* 左側に絶妙な余白 */
+        }
+        .col-value {
             text-align: right;
+            width: 70%;
+            padding-right: 35px; /* 右側に絶妙な余白 */
             font-variant-numeric: tabular-nums;
-            font-weight: bold;
         }
-        /* 最上部（見出し行）の装飾 */
-        .highlight-row {
-            background-color: #e8f0fe;
-            font-weight: bold;
+
+        /* 3列構成（振込依頼・現金用意）用の細かな位置調整 */
+        .triple-row td {
+            border-bottom: 1px dotted #CCCCCC;
+        }
+        .triple-row tr:nth-child(2) td, 
+        .triple-row tr:last-child td {
+            border-bottom: none; /* 合計と明日の間のドット線を調整 */
+        }
+        .col-3-1 { text-align: left; width: 30%; padding-left: 15px; }
+        .col-3-2 { text-align: center; width: 20%; color: #000000; }
+        .col-3-3 { text-align: right; width: 50%; padding-right: 15px; font-variant-numeric: tabular-nums; }
+
+        /* 💡一番下の「現金差異」専用：上下の太い緑線 */
+        .diff-table {
+            border-top: 2px solid #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            margin-top: 10px;
+        }
+        .diff-table td {
+            padding: 14px 6px;
+        }
+        .col-diff-label {
+            text-align: left;
+            width: 40%;
+            padding-left: 25px;
+            color: #000000;
+        }
+        .col-diff-value {
+            text-align: center;
+            width: 60%;
+            color: #000000;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📊 本日の買取額サマリー</h2>
     
     <div id="loading">
         <div class="spinner"></div>
-        最新のデータを回収中...
+        データを読み込み中...
     </div>
 
-    <div class="table-wrapper">
-        <table id="summaryTable" style="display: none;">
-            <tbody id="tableBody">
+    <div id="summaryBox" class="summary-box">
+        <div id="dateHeader" class="date-header"></div>
+
+        <table class="main-table">
+            <tbody id="mainTableBody">
                 </tbody>
+        </table>
+
+        <table class="triple-row">
+            <tbody id="subTableBody">
+                </tbody>
+        </table>
+
+        <table class="diff-table">
+            <tbody>
+                <tr>
+                    <td id="diffLabel" class="col-diff-label">現金差異</td>
+                    <td id="diffValue" class="col-diff-value">￥0 差異無し</td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </div>
 
 <script>
-// 💡 先ほど新しく発行された「B2:G16」対応版のGASウェブアプリURL
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyb_hqaf-iDps7h8oUQUzVGpA4M8zejJLzz6Nt2krq8CltBguKsvC44tCi0yoWu6I-y/exec";
+
+// 💡 Google特有の変な日付文字を「26.6/05」形式に超綺麗に変換する職人ロジック
+function formatGoogleDate(dateStr) {
+    if (!dateStr) return "26.6/05"; // 万が一空ならデフォルト
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr; // 変換できなければそのまま使う
+    
+    const yy = d.getFullYear().toString().slice(-2);
+    const mm = d.getMonth() + 1;
+    const dd = d.getDate().toString().padStart(2, '0'); // 日付は2桁固定
+    
+    return `${yy}.${mm}/${dd}`;
+}
 
 async function fetchSummary() {
     try {
         const response = await fetch(GAS_API_URL);
         const json = await response.json();
-        const matrix = json.data;
+        const matrix = json.data; // B2:G16 の2次元配列
 
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
+        // 1. 日付のセット (B2セル)
+        const rawDate = matrix[0][0];
+        document.getElementById('dateHeader').textContent = formatGoogleDate(rawDate);
 
-        matrix.forEach((row, rowIndex) => {
-            // 完全な空白行はスキップして画面を詰める
-            if (row.every(cell => cell === "" || cell === null)) return;
+        // 2. メインテーブル (来店〜粗利率) の組み立て
+        const mainTableBody = document.getElementById('mainTableBody');
+        mainTableBody.innerHTML = '';
+        
+        // 来店、成約、買取額、卸予定額、見込粗利、粗利率 のインデックス
+        const mainRows = [
+            { label: '来店', val: matrix[1][1], unit: ' 客' },
+            { label: '成約', val: matrix[3][1], unit: ' 客', extra: `成約率  ${(matrix[3][4] * 100).toFixed(1)} %` },
+            { label: '買取額', val: matrix[4][1], unit: ' 円' },
+            { label: '卸予定額', val: matrix[5][1], unit: ' 円' },
+            { label: '見込粗利', val: matrix[6][1], unit: ' 円' },
+            { label: '粗利率', val: typeof matrix[7][1] === 'number' ? `${(matrix[7][1] * 100).toFixed(1)} %` : matrix[7][1], unit: '' }
+        ];
 
+        mainRows.forEach(row => {
             const tr = document.createElement('tr');
             
-            // 1行目にアクセントカラーを適用
-            if (rowIndex === 0) {
-                tr.classList.add('highlight-row');
+            const tdLabel = document.createElement('td');
+            tdLabel.className = 'col-label';
+            tdLabel.textContent = row.label;
+            
+            const tdValue = document.createElement('td');
+            tdValue.className = 'col-value';
+            
+            // 数値の3桁カンマ区切り整形
+            let displayVal = row.val;
+            if (typeof displayVal === 'number' && row.label !== '粗利率') {
+                displayVal = displayVal.toLocaleString();
             }
-
-            row.forEach((cell) => {
-                const td = document.createElement('td');
-                
-                // 数字、または通貨表記（円やカンマ）を含むものは見やすく右寄せ
-                if (typeof cell === 'number' || (!isNaN(cell) && cell !== '') || (typeof cell === 'string' && (cell.includes('円') || cell.includes(',')))) {
-                    td.classList.add('number-cell');
-                    if (typeof cell === 'number') {
-                        td.textContent = cell.toLocaleString();
-                    } else {
-                        td.textContent = cell;
-                    }
-                } else {
-                    td.textContent = cell;
-                }
-                tr.appendChild(td);
-            });
-            tableBody.appendChild(tr);
+            
+            // 成約行の「成約率」などの横並び特殊テキスト対応
+            if (row.extra) {
+                tdValue.innerHTML = `${displayVal}${row.unit} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${row.extra}`;
+            } else {
+                tdValue.textContent = `${displayVal}${row.unit}`;
+            }
+            
+            tr.appendChild(tdLabel);
+            tr.appendChild(tdValue);
+            mainTableBody.appendChild(tr);
         });
 
-        // ローディングを消してテーブルを表示
+        // 3. サブテーブル (振込依頼・現金用意) の組み立て
+        const subTableBody = document.getElementById('subTableBody');
+        subTableBody.innerHTML = '';
+
+        const subRows = [
+            { group: '振込依頼', type: '合計', count: matrix[9][2], price: matrix[9][3] },
+            { group: '',         type: '明日', count: matrix[10][2], price: matrix[10][3] },
+            { group: '現金用意', type: '合計', count: matrix[11][2], price: matrix[11][3] },
+            { group: '',         type: '明日', count: matrix[12][2], price: matrix[12][3] }
+        ];
+
+        subRows.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            const tdGroup = document.createElement('td');
+            tdGroup.className = 'col-3-1';
+            tdGroup.textContent = row.group;
+            
+            const tdType = document.createElement('td');
+            tdType.className = 'col-3-2';
+            tdType.textContent = row.type;
+            
+            const tdData = document.createElement('td');
+            tdData.className = 'col-3-3';
+            
+            const cStr = typeof row.count === 'number' ? row.count : 0;
+            const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : row.price;
+            tdData.textContent = `${cStr} 件       ${pStr} 円`;
+            
+            tr.appendChild(tdGroup);
+            tr.appendChild(tdType);
+            tr.appendChild(tdData);
+            subTableBody.appendChild(tr);
+        });
+
+        // 4. 現金差異のセット (B16・D16セル付近)
+        document.getElementById('diffLabel').textContent = matrix[14][0] || "現金差異";
+        document.getElementById('diffValue').textContent = matrix[14][2] || "￥0 差異無し";
+
+        // 表示の切り替え
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('summaryTable').style.display = 'table';
+        document.getElementById('summaryBox').style.display = 'block';
 
     } catch (error) {
-        document.getElementById('loading').innerHTML = `<span style="color:red;">データの取得に失敗しました。</span>`;
+        document.getElementById('loading').innerHTML = `<span style="color:red;">データの取得・描画に失敗しました。</span>`;
         console.error(error);
     }
 }
 
-// 起動
 fetchSummary();
 </script>
 
