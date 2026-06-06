@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>本日の買取サマリー</title>
+    <style>
+        /* 画面全体の基本設定 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 8px; /* スマホの横幅を広く使うために余白を最小限に */
+            color: #333;
+        }
+        .container {
+            max-width: 600px; /* 6列綺麗に収めるための最大幅 */
+            margin: 0 auto;
+            background: #fff;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 16px;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #1a73e8;
+            border-bottom: 2px solid #e8f0fe;
+            padding-bottom: 8px;
+        }
+        /* ローディング画面 */
+        #loading {
+            text-align: center;
+            padding: 40px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .spinner {
+            width: 26px;
+            height: 26px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 6列表示をスマホにジャストフィットさせるためのテーブル設定 */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto; /* 万が一はみ出しても横スクロールできるようにガード */
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px; /* 6列が1画面に収まるよう、文字サイズを調整 */
+            letter-spacing: -0.5px; /* 文字の間隔をわずかに詰めて視認性確保 */
+        }
+        th, td {
+            border: 1px solid #dadce0;
+            padding: 8px 4px; /* 左右の余白を詰めて横幅を確保 */
+            text-align: center;
+            white-space: nowrap; /* 変なところで改行してガタガタになるのを防ぐ */
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #4f5b66;
+            font-weight: 600;
+        }
+        /* 数字用のセルスタイル */
+        .number-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: bold;
+        }
+        /* 最上部（見出し行）の装飾 */
+        .highlight-row {
+            background-color: #e8f0fe;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📊 本日の買取額サマリー</h2>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        最新のデータを回収中...
+    </div>
+
+    <div class="table-wrapper">
+        <table id="summaryTable" style="display: none;">
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// 💡 先ほど新しく発行された「B2:G16」対応版のGASウェブアプリURL
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz2i0pTJlYgzPQFxlApqeAqH21aejKn3U_heC2J6KtyRbLxRiE6fg8x-VKStSZ_eJXa/exec";
+
+async function fetchSummary() {
+    try {
+        const response = await fetch(GAS_API_URL);
+        const json = await response.json();
+        const matrix = json.data;
+
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+
+        matrix.forEach((row, rowIndex) => {
+            // 完全な空白行はスキップして画面を詰める
+            if (row.every(cell => cell === "" || cell === null)) return;
+
+            const tr = document.createElement('tr');
+            
+            // 1行目にアクセントカラーを適用
+            if (rowIndex === 0) {
+                tr.classList.add('highlight-row');
+            }
+
+            row.forEach((cell) => {
+                const td = document.createElement('td');
+                
+                // 数字、または通貨表記（円やカンマ）を含むものは見やすく右寄せ
+                if (typeof cell === 'number' || (!isNaN(cell) && cell !== '') || (typeof cell === 'string' && (cell.includes('円') || cell.includes(',')))) {
+                    td.classList.add('number-cell');
+                    if (typeof cell === 'number') {
+                        td.textContent = cell.toLocaleString();
+                    } else {
+                        td.textContent = cell;
+                    }
+                } else {
+                    td.textContent = cell;
+                }
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+
+        // ローディングを消してテーブルを表示
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('summaryTable').style.display = 'table';
+
+    } catch (error) {
+        document.getElementById('loading').innerHTML = `<span style="color:red;">データの取得に失敗しました。</span>`;
+        console.error(error);
+    }
+}
+
+// 起動
+fetchSummary();
+</script>
+
+</body>
+</html>
