@@ -171,6 +171,9 @@ async function startAnalysis() {
     document.getElementById('loading-text').innerText = "画像をアップロード中...";
     
     try {
+        // ✨ 最初から最後までこのメッセージで統一し、プロ感を出す
+        document.getElementById('loading-text').innerText = "画像データを最適化...\nAIが分析しています。";
+        
         const filesToSend = [];
         for (let i = 0; i < selectedFilesArray.length; i++) {
             const f = selectedFilesArray[i];
@@ -191,8 +194,7 @@ async function startAnalysis() {
             console.log("データ送信完了");
         }
         
-        document.getElementById('loading-text').innerText = "データ送信完了！\nAIが分析中...";
-        
+        // 💡 「送信完了」の文字切り替えを完全に廃止し、そのまま同じ文字でループへ突入
         checkResultInterval();
         
     } catch (error) {
