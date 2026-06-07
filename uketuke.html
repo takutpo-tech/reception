@@ -121,25 +121,25 @@ async function uploadImages() {
     
     try {
         // =================================================================
-        // 🔍 【変更】LIFFを起動して、アクセスした人のLINE IDを自動で取得する
+        // 🔍 【デバッグ版】どこでコケているかアラートで徹底追跡する
         // =================================================================
         let lineId = null;
         try {
-            await liff.init({ liffId: "2010292787-nAxhQtMo" }); // スクショのLIFF IDをセット
+            alert('1. LIFF初期化を開始します。ID: 2010292787-nAxhQtMo');
+            await liff.init({ liffId: "2010292787-nAxhQtMo" }); 
+            
+            alert('2. LIFF初期化に成功しました。ログイン状態: ' + liff.isLoggedIn());
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
-                lineId = profile.userId; // ログイン中のユーザーID（Uxxxx...）を取得
+                lineId = profile.userId; 
+                alert('3. ユーザーIDの取得に成功しました: ' + lineId);
             } else {
-                liff.login(); // LINEアプリ以外で開かれた場合はログインを促す
+                alert('4. ログインしていないため、liff.login() を実行します。');
+                liff.login(); 
                 return;
             }
         } catch (liffError) {
-            alert('LINE認証に失敗しました: ' + liffError.toString());
-            return;
-        }
-
-        if (!lineId) {
-            alert('エラー: LINE IDが特定できません。');
+            alert('❌ LIFFの処理中に致命的なエラーが発生しました:\n' + liffError.toString());
             return;
         }
 
