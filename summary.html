@@ -253,7 +253,8 @@ async function fetchSummary(lineId) {
             
             const cStr = typeof row.count === 'number' ? row.count : 0;
             const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : 0;
-            tdData.textContent = `${cStr} 件       ${pStr} 円`;
+            // 💡 ブラウザにスペースを潰されないよう、特殊な空白「&nbsp;」で強制的に隙間を作ります
+            tdData.innerHTML = `${cStr} 件 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${pStr} 円`;
             
             tr.appendChild(tdGroup);
             tr.appendChild(tdType);
