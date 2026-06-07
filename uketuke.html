@@ -121,25 +121,25 @@ async function uploadImages() {
     
     try {
         // =================================================================
-        // 🔍 【デバッグ版】どこでコケているかアラートで徹底追跡する
+        // 🔒 LIFFからアクセスした人のLINE IDを自動で取得（アラートなしのスッキリ版）
         // =================================================================
         let lineId = null;
         try {
-            alert('1. LIFF初期化を開始します。ID: 2010292787-nAxhQtMo');
             await liff.init({ liffId: "2010292787-nAxhQtMo" }); 
-            
-            alert('2. LIFF初期化に成功しました。ログイン状態: ' + liff.isLoggedIn());
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
                 lineId = profile.userId; 
-                alert('3. ユーザーIDの取得に成功しました: ' + lineId);
             } else {
-                alert('4. ログインしていないため、liff.login() を実行します。');
                 liff.login(); 
                 return;
             }
         } catch (liffError) {
-            alert('❌ LIFFの処理中に致命的なエラーが発生しました:\n' + liffError.toString());
+            alert('LINE認証に失敗しました: ' + liffError.toString());
+            return;
+        }
+
+        if (!lineId) {
+            alert('エラー: LINE IDが特定できません。');
             return;
         }
 
@@ -174,7 +174,7 @@ async function uploadImages() {
             });
         }
         
-        // 自動取得したlineIdを載せてペイロードを作成
+        // ペイロードを作成
         const payload = {
             lineId: lineId,
             files: filesToSend
@@ -190,6 +190,7 @@ async function uploadImages() {
             body: JSON.stringify(payload)
         });
         
+        // 送信完了バナーを表示
         showCompletionBanner();
         
         // フォームをリセット
@@ -204,7 +205,4 @@ async function uploadImages() {
         loading.style.display = 'none';
     }
 }
-</script>
-
-</body>
 </html>
