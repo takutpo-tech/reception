@@ -73,10 +73,31 @@
 </div>
 
 <script>
-// 【修正】先ほどテストに成功した正しいメインGASのURLに戻しました
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyLablfy4U1oaCYUHhr1YurSoLxjkBc3i7OZ73Hu6geT-NLGR-0hljwwqNTI2Pkc5mD/exec";
 
-// 画像をBase64に変換する関数
+// グローバル変数としてLINE IDを保持する領域を作っておく
+let globalLineId = null;
+
+// 【超重要】画面が開いた瞬間に、裏側で自動的にLINE IDを取得完了させておく安全な初期化
+window.onload = function() {
+    liff.init({ liffId: "2010292787-nAxhQtMo" })
+        .then(() => {
+            if (liff.isLoggedIn()) {
+                return liff.getProfile();
+            } else {
+                liff.login();
+            }
+        })
+        .then(profile => {
+            if (profile) {
+                globalLineId = profile.userId; // 事前にIDをキープ！
+            }
+        })
+        .catch(err => {
+            alert("LINE初期化エラー: " + err.toString());
+        });
+};
+
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         if (!file) resolve(null);
@@ -87,7 +108,6 @@ function fileToBase64(file) {
     });
 }
 
-// バナーを中央に表示して5秒後にフェードアウトさせる関数
 function showCompletionBanner() {
     const banner = document.getElementById('completion-banner');
     banner.style.display = 'block';
@@ -101,6 +121,7 @@ function showCompletionBanner() {
     }, 5000);
 }
 
+// ボタンを押したときの処理（競合を起こさないよう限界までシンプル化）
 async function uploadImages() {
     const file1 = document.getElementById('file1').files[0];
     const file2 = document.getElementById('file2').files[0];
@@ -108,6 +129,12 @@ async function uploadImages() {
     
     if (!file1) {
         alert('① 受付票の画像は必須です！');
+        return;
+    }
+    
+    // 事前に取得できていなければ、ここでストップをかける
+    if (!globalLineId) {
+        alert('エラー: LINE IDがまだ読み込まれていません。一瞬待ってから再度お試しください。');
         return;
     }
     
@@ -120,33 +147,8 @@ async function uploadImages() {
     banner.style.display = 'none';
     
     try {
-        // =================================================================
-        // 🔒 LIFFからアクセスした人のLINE IDを自動で取得（アラートなしのスッキリ版）
-        // =================================================================
-        let lineId = null;
-        try {
-            await liff.init({ liffId: "2010292787-nAxhQtMo" }); 
-            if (liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                lineId = profile.userId; 
-            } else {
-                liff.login(); 
-                return;
-            }
-        } catch (liffError) {
-            alert('LINE認証に失敗しました: ' + liffError.toString());
-            return;
-        }
-
-        if (!lineId) {
-            alert('エラー: LINE IDが特定できません。');
-            return;
-        }
-
-        // GASへ送る配列を準備
         const filesToSend = [];
 
-        // ファイル1（必須）の処理
         const base64_1 = await fileToBase64(file1);
         filesToSend.push({
             image: base64_1,
@@ -154,7 +156,6 @@ async function uploadImages() {
             type: "1"
         });
 
-        // ファイル2（任意）
         if (file2) {
             const base64_2 = await fileToBase64(file2);
             filesToSend.push({
@@ -164,7 +165,6 @@ async function uploadImages() {
             });
         }
 
-        // ファイル3（任意）
         if (file3) {
             const base64_3 = await fileToBase64(file3);
             filesToSend.push({
@@ -174,13 +174,11 @@ async function uploadImages() {
             });
         }
         
-        // ペイロードを作成
         const payload = {
-            lineId: lineId,
+            lineId: globalLineId, // 事前に取得してあるIDをハメ込むだけ
             files: filesToSend
         };
         
-        // GASへ送信
         await fetch(GAS_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -190,10 +188,8 @@ async function uploadImages() {
             body: JSON.stringify(payload)
         });
         
-        // 送信完了バナーを表示
         showCompletionBanner();
         
-        // フォームをリセット
         document.getElementById('file1').value = '';
         document.getElementById('file2').value = '';
         document.getElementById('file3').value = '';
@@ -205,5 +201,6 @@ async function uploadImages() {
         loading.style.display = 'none';
     }
 }
-</script> </body>
+</script>
+</body>
 </html>
