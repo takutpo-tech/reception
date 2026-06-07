@@ -218,10 +218,9 @@ async function fetchSummary(lineId) {
             throw new Error("データが空か、マスタに登録がない可能性があります。");
         }
 
-        // 1. 日付のセット (B2セル) + 確認用に名前を少し付け足す演出も可能
+        // 1. 日付のセット (B2セル)
         const rawDate = matrix[0][0];
-        const titleText = formatGoogleDate(rawDate);
-        document.getElementById('dateHeader').textContent = json.senderName ? `${titleText} (${json.senderName})` : titleText;
+        document.getElementById('dateHeader').textContent = formatGoogleDate(rawDate);
 
         // 2. メインテーブル (来店〜粗利率) の組み立て
         const mainTableBody = document.getElementById('mainTableBody');
