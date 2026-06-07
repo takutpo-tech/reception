@@ -6,7 +6,6 @@
     <title>本日の買取サマリー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        /* 画面全体の基本設定：余白をなくし背景をシンプルに */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
             background-color: #ffffff;
@@ -18,8 +17,6 @@
             max-width: 500px;
             margin: 0 auto;
         }
-        
-        /* ローディング画面 */
         #loading {
             text-align: center;
             padding: 40px 0;
@@ -39,14 +36,10 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* 💡イメージ通りに極限まで調整したカスタムレイアウト */
         .summary-box {
-            display: none; /* 初期状態は非表示 */
+            display: none;
             width: 100%;
         }
-
-        /* 日付エリアのスタイル */
         .date-header {
             font-size: 22px;
             font-weight: bold;
@@ -54,61 +47,48 @@
             margin-bottom: 8px;
             padding-left: 4px;
         }
-
-        /* テーブルの共通設定 */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 28px;
         }
-        
-        /* 上下の太い黒線 */
         .main-table {
             border-top: 2px solid #000000;
             border-bottom: 2px solid #000000;
         }
-
         td {
             padding: 12px 6px;
             font-size: 18px;
             font-weight: bold;
             color: #000000;
         }
-
-        /* 細いドットの区切り線 */
         .main-table td {
             border-bottom: 1px dotted #999999;
         }
         .main-table tr:last-child td {
-            border-bottom: none; /* 一番下の行のドット線は消す */
+            border-bottom: none;
         }
-
-        /* 列ごとの配置・幅の固定（文字と数字が綺麗に揃うように調整） */
         .col-label {
             text-align: left;
             width: 30%;
-            padding-left: 35px; /* 左側に絶妙な余白 */
+            padding-left: 35px;
         }
         .col-value {
             text-align: right;
             width: 70%;
-            padding-right: 35px; /* 右側に絶妙な余白 */
+            padding-right: 35px;
             font-variant-numeric: tabular-nums;
         }
-
-        /* 3列構成（振込依頼・現金用意）用の細かな位置調整 */
         .triple-row td {
             border-bottom: 1px dotted #CCCCCC;
         }
         .triple-row tr:nth-child(2) td, 
         .triple-row tr:last-child td {
-            border-bottom: none; /* 合計と明日の間のドット線を調整 */
+            border-bottom: none;
         }
         .col-3-1 { text-align: left; width: 30%; padding-left: 15px; }
         .col-3-2 { text-align: center; width: 20%; color: #000000; }
         .col-3-3 { text-align: right; width: 50%; padding-right: 15px; font-variant-numeric: tabular-nums; }
-
-        /* 💡一番下の「現金差異」専用：上下の太い緑線 */
         .diff-table {
             border-top: 2px solid #4CAF50;
             border-bottom: 2px solid #4CAF50;
@@ -133,7 +113,6 @@
 <body>
 
 <div class="container">
-    
     <div id="loading">
         <div class="spinner"></div>
         データを読み込み中...
@@ -143,13 +122,11 @@
         <div id="dateHeader" class="date-header"></div>
 
         <table class="main-table">
-            <tbody id="mainTableBody">
-                </tbody>
+            <tbody id="mainTableBody"></tbody>
         </table>
 
         <table class="triple-row">
-            <tbody id="subTableBody">
-                </tbody>
+            <tbody id="subTableBody"></tbody>
         </table>
 
         <table class="diff-table">
@@ -164,11 +141,10 @@
 </div>
 
 <script>
-// 🔑 【要設定】
+// 🔑 【要設定】ご自身のLIFF IDに書き換えてください
 const LIFF_ID = "2010292787-ZmmtDZh0"; 
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbymT49eX1DFgCQJNE2oBhrx0lmX8xAq_h8WsxIYlaNWwUsWteMZVdDe5CcP-76iCA_f/exec";
 
-// 💡 Google特有の変な日付文字を「26.6/05」形式に超綺麗に変換する職人ロジック
 function formatGoogleDate(dateStr) {
     if (!dateStr) return "26.6/05"; 
     const d = new Date(dateStr);
@@ -181,44 +157,32 @@ function formatGoogleDate(dateStr) {
     return `${yy}.${mm}/${dd}`;
 }
 
-// 🚀 LIFFの初期化とLINE IDの取得からすべてを始めるメイン処理
 async function initializeLiff() {
     try {
-        // LIFFの初期化
         await liff.init({ liffId: LIFF_ID });
-        
-        // LINE内ブラウザ、または外部ブラウザでログインしていなければログインさせる
         if (!liff.isLoggedIn()) {
             liff.login();
             return;
         }
-
-        // 👤 開いたユーザーのLINEプロフィール（ID含む）を取得
         const profile = await liff.getProfile();
-        const lineId = profile.userId; // これが暗号のようなLINE ID
-
-        // IDを持ってサマリーデータの自動読み込みへ進む
-        await fetchSummary(lineId);
-
+        await fetchSummary(profile.userId);
     } catch (error) {
         document.getElementById('loading').innerHTML = `<span style="color:red;">LINE連携(LIFF)の初期化に失敗しました。</span>`;
-        console.error("LIFFエラー:", error);
+        console.error(error);
     }
 }
 
-// 📊 親玉GASから本人のスプレッドシートデータを引っ張ってきて画面を描く処理
 async function fetchSummary(lineId) {
     try {
-        // 💡 【修正ポイント】URLの末尾に「?lineId=現在のユーザーID」を自動でくっつける！
         const response = await fetch(`${GAS_API_URL}?lineId=${lineId}`);
         const json = await response.json();
-        const matrix = json.data; // B2:G16 の2次元配列
+        const matrix = json.data; 
 
         if (!matrix || matrix.length === 0) {
             throw new Error("データが空か、マスタに登録がない可能性があります。");
         }
 
-        // 1. 日付のセット (B2セル)
+        // 1. 日付のセット (B2セル) ※名前なし
         const rawDate = matrix[0][0];
         document.getElementById('dateHeader').textContent = formatGoogleDate(rawDate);
 
@@ -226,11 +190,9 @@ async function fetchSummary(lineId) {
         const mainTableBody = document.getElementById('mainTableBody');
         mainTableBody.innerHTML = '';
         
-        // 💡 成約率を計算（安全に数値変換して％にする処理）
         let contractValueText = "";
         if (matrix[3] && matrix[3][1] !== undefined) {
             contractValueText = `${matrix[3][1]} 客`;
-            // matrix[3][4]（E4セル付近の成約率）が数値なら％に変換して横に並べる
             if (typeof matrix[3][4] === 'number') {
                 const rate = (matrix[3][4] * 100).toFixed(1);
                 contractValueText += ` &nbsp;&nbsp;&nbsp;&nbsp; 成約率 ${rate} %`;
@@ -248,7 +210,6 @@ async function fetchSummary(lineId) {
 
         mainRows.forEach(row => {
             const tr = document.createElement('tr');
-            
             const tdLabel = document.createElement('td');
             tdLabel.className = 'col-label';
             tdLabel.textContent = row.label;
@@ -261,7 +222,6 @@ async function fetchSummary(lineId) {
             } else {
                 tdValue.textContent = row.val;
             }
-            
             tr.appendChild(tdLabel);
             tr.appendChild(tdValue);
             mainTableBody.appendChild(tr);
@@ -271,7 +231,6 @@ async function fetchSummary(lineId) {
         const subTableBody = document.getElementById('subTableBody');
         subTableBody.innerHTML = '';
 
-        // 配列が安全に存在しているかチェックしながらデータを格納
         const subRows = [
             { group: '振込依頼', type: '合計', count: matrix[9] ? matrix[9][2] : 0, price: matrix[9] ? matrix[9][3] : 0 },
             { group: '',         type: '明日', count: matrix[10] ? matrix[10][2] : 0, price: matrix[10] ? matrix[10][3] : 0 },
@@ -281,7 +240,6 @@ async function fetchSummary(lineId) {
 
         subRows.forEach(row => {
             const tr = document.createElement('tr');
-            
             const tdGroup = document.createElement('td');
             tdGroup.className = 'col-3-1';
             tdGroup.textContent = row.group;
@@ -295,7 +253,6 @@ async function fetchSummary(lineId) {
             
             const cStr = typeof row.count === 'number' ? row.count : 0;
             const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : 0;
-            
             tdData.textContent = `${cStr} 件       ${pStr} 円`;
             
             tr.appendChild(tdGroup);
@@ -304,85 +261,13 @@ async function fetchSummary(lineId) {
             subTableBody.appendChild(tr);
         });
 
-        // 3. サブテーブル (振込依頼・現金用意) の組み立て
-        const subTableBody = document.getElementById('subTableBody');
-        subTableBody.innerHTML = '';
+        // 💡 4. 消えていた「現金差異」と「表示切り替え」を完全に復活
+        if (matrix[14]) {
+            document.getElementById('diffLabel').textContent = matrix[14][0] || "現金差異";
+            document.getElementById('diffValue').textContent = matrix[14][2] || "￥0 差異無し";
+        }
 
-        // 💡 スプレッドシートから「件数(C列)」と「金額(D列)」をそれぞれ正しく引っ張るように修正
-        const subRows = [
-            { group: '振込依頼', type: '合計', count: matrix[9][2], price: matrix[9][3] },
-            { group: '',         type: '明日', count: matrix[10][2], price: matrix[10][3] },
-            { group: '現金用意', type: '合計', count: matrix[11][2], price: matrix[11][3] },
-            { group: '',         type: '明日', count: matrix[12][2], price: matrix[12][3] }
-        ];
-
-        subRows.forEach(row => {
-            const tr = document.createElement('tr');
-            
-            const tdGroup = document.createElement('td');
-            tdGroup.className = 'col-3-1';
-            tdGroup.textContent = row.group;
-            
-            const tdType = document.createElement('td');
-            tdType.className = 'col-3-2';
-            tdType.textContent = row.type;
-            
-            const tdData = document.createElement('td');
-            tdData.className = 'col-3-3';
-            
-            // 💡 件数と金額がそれぞれ数字ならカンマを入れ、空白なら「0」にする処理
-            const cStr = typeof row.count === 'number' ? row.count : (row.count || 0);
-            const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : (row.price || 0);
-            
-            // 絶妙な余白（スペース）を開けて表示
-            tdData.textContent = `${cStr} 件       ${pStr} 円`;
-            
-            tr.appendChild(tdGroup);
-            tr.appendChild(tdType);
-            tr.appendChild(tdData);
-            subTableBody.appendChild(tr);
-        });
-
-        // 3. サブテーブル (振込依頼・現金用意) の組み立て
-        const subTableBody = document.getElementById('subTableBody');
-        subTableBody.innerHTML = '';
-
-        const subRows = [
-            { group: '振込依頼', type: '合計', count: matrix[9][2], price: matrix[9][3] },
-            { group: '',         type: '明日', count: matrix[10][2], price: matrix[10][3] },
-            { group: '現金用意', type: '合計', count: matrix[11][2], price: matrix[11][3] },
-            { group: '',         type: '明日', count: matrix[12][2], price: matrix[12][3] }
-        ];
-
-        subRows.forEach(row => {
-            const tr = document.createElement('tr');
-            
-            const tdGroup = document.createElement('td');
-            tdGroup.className = 'col-3-1';
-            tdGroup.textContent = row.group;
-            
-            const tdType = document.createElement('td');
-            tdType.className = 'col-3-2';
-            tdType.textContent = row.type;
-            
-            const tdData = document.createElement('td');
-            tdData.className = 'col-3-3';
-            
-            const cStr = typeof row.count === 'number' ? row.count : 0;
-            const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : row.price;
-            tdData.textContent = `${cStr} 件       ${pStr} 円`;
-            
-            tr.appendChild(tdGroup);
-            tr.appendChild(tdType);
-            tr.appendChild(tdData);
-            subTableBody.appendChild(tr);
-        });
-
-        // 4. 現金差異のセット (B16・D16セル付近)
-        document.getElementById('diffLabel').textContent = matrix[14][0] || "現金差異";
-        document.getElementById('diffValue').textContent = matrix[14][2] || "￥0 差異無し";
-
-        // 表示の切り替え
+        // 💡 読み込み中を消して、サマリーボックスをパッと出す
         document.getElementById('loading').style.display = 'none';
         document.getElementById('summaryBox').style.display = 'block';
 
@@ -392,7 +277,6 @@ async function fetchSummary(lineId) {
     }
 }
 
-// 🎬 ページを開いた瞬間にLIFF制御をスタートさせる
 initializeLiff();
 </script>
 
