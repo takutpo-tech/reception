@@ -226,13 +226,19 @@ async function fetchSummary(lineId) {
         const mainTableBody = document.getElementById('mainTableBody');
         mainTableBody.innerHTML = '';
         
+        // 💡 成約率の文字が被らないように、最初から「値」の中に成約率を組み込むように変更
+        let contractValueText = `${matrix[3][1]} 客`;
+        if (typeof matrix[3][4] === 'number') {
+            contractValueText += ` &nbsp;&nbsp;&nbsp;&nbsp; 成約率 ${(matrix[3][4] * 100).toFixed(1)} %`;
+        }
+
         const mainRows = [
-            { label: '来店', val: matrix[1][1], unit: ' 客' },
-            { label: '成約', val: matrix[3][1], unit: ' 客', extra: `成約率  ${typeof matrix[3][4] === 'number' ? (matrix[3][4] * 100).toFixed(1) : "0.0"} %` },
-            { label: '買取額', val: matrix[4][1], unit: ' 円' },
-            { label: '卸予定額', val: matrix[5][1], unit: ' 円' },
-            { label: '見込粗利', val: matrix[6][1], unit: ' 円' },
-            { label: '粗利率', val: typeof matrix[7][1] === 'number' ? `${(matrix[7][1] * 100).toFixed(1)} %` : matrix[7][1], unit: '' }
+            { label: '来店', val: typeof matrix[1][1] === 'number' ? `${matrix[1][1].toLocaleString()} 客` : `${matrix[1][1]} 客` },
+            { label: '成約', val: contractValueText, isHtml: true }, // 💡 HTMLとして埋め込む
+            { label: '買取額', val: typeof matrix[4][1] === 'number' ? `${matrix[4][1].toLocaleString()} 円` : `${matrix[4][1]} 円` },
+            { label: '卸予定額', val: typeof matrix[5][1] === 'number' ? `${matrix[5][1].toLocaleString()} 円` : `${matrix[5][1]} 円` },
+            { label: '見込粗利', val: typeof matrix[6][1] === 'number' ? `${matrix[6][1].toLocaleString()} 円` : `${matrix[6][1]} 円` },
+            { label: '粗利率', val: typeof matrix[7][1] === 'number' ? `${(matrix[7][1] * 100).toFixed(1)} %` : matrix[7][1] }
         ];
 
         mainRows.forEach(row => {
@@ -245,20 +251,55 @@ async function fetchSummary(lineId) {
             const tdValue = document.createElement('td');
             tdValue.className = 'col-value';
             
-            let displayVal = row.val;
-            if (typeof displayVal === 'number' && row.label !== '粗利率') {
-                displayVal = displayVal.toLocaleString();
-            }
-            
-            if (row.extra) {
-                tdValue.innerHTML = `${displayVal}${row.unit} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${row.extra}`;
+            // 💡 成約行だけ特殊な横並びHTMLをそのまま流し込む
+            if (row.isHtml) {
+                tdValue.innerHTML = row.val;
             } else {
-                tdValue.textContent = `${displayVal}${row.unit}`;
+                tdValue.textContent = row.val;
             }
             
             tr.appendChild(tdLabel);
             tr.appendChild(tdValue);
             mainTableBody.appendChild(tr);
+        });
+
+        // 3. サブテーブル (振込依頼・現金用意) の組み立て
+        const subTableBody = document.getElementById('subTableBody');
+        subTableBody.innerHTML = '';
+
+        // 💡 スプレッドシートから「件数(C列)」と「金額(D列)」をそれぞれ正しく引っ張るように修正
+        const subRows = [
+            { group: '振込依頼', type: '合計', count: matrix[9][2], price: matrix[9][3] },
+            { group: '',         type: '明日', count: matrix[10][2], price: matrix[10][3] },
+            { group: '現金用意', type: '合計', count: matrix[11][2], price: matrix[11][3] },
+            { group: '',         type: '明日', count: matrix[12][2], price: matrix[12][3] }
+        ];
+
+        subRows.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            const tdGroup = document.createElement('td');
+            tdGroup.className = 'col-3-1';
+            tdGroup.textContent = row.group;
+            
+            const tdType = document.createElement('td');
+            tdType.className = 'col-3-2';
+            tdType.textContent = row.type;
+            
+            const tdData = document.createElement('td');
+            tdData.className = 'col-3-3';
+            
+            // 💡 件数と金額がそれぞれ数字ならカンマを入れ、空白なら「0」にする処理
+            const cStr = typeof row.count === 'number' ? row.count : (row.count || 0);
+            const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : (row.price || 0);
+            
+            // 絶妙な余白（スペース）を開けて表示
+            tdData.textContent = `${cStr} 件       ${pStr} 円`;
+            
+            tr.appendChild(tdGroup);
+            tr.appendChild(tdType);
+            tr.appendChild(tdData);
+            subTableBody.appendChild(tr);
         });
 
         // 3. サブテーブル (振込依頼・現金用意) の組み立て
