@@ -45,10 +45,10 @@
             font-weight: bold;
             letter-spacing: 1px;
             margin-bottom: 8px;
-            padding-left: 15px; /* 日付も大見出しの頭揃えに合わせる */
+            padding-left: 15px;
         }
         
-        /* 📋 全体で共通のグリッド列幅を設定（これで絶対に頭が揃います） */
+        /* 📋 テーブル共通の基本ルール */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -62,16 +62,16 @@
             vertical-align: middle;
         }
 
-        /* 各列の幅の黄金比率（見出し32% / 中見出し15% / 件数15% / データ・金額38%） */
-        .col-head  { width: 32%; text-align: left; padding-left: 15px; } /* 💡全員ここで頭が揃う */
-        .col-mid   { width: 15%; text-align: left; }  /* 合計・明日を左寄せ */
-        .col-count { width: 15%; text-align: left; }  /* 件数の位置を固定 */
-        .col-data  { width: 38%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; } /* 右端右揃え */
+        /* 💡 大見出しの頭揃え（15px）を維持しつつ、成約の1行収めを実現する幅比率 */
+        .col-head  { width: 32%; text-align: left; padding-left: 15px; } /* 大見出し頭揃え位置 */
+        .col-mid   { width: 14%; text-align: left; }  /* 合計・明日位置 */
+        .col-count { width: 14%; text-align: left; }  /* 件数の位置を固定 */
+        .col-data  { width: 40%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; } /* 右端右揃え */
 
         /* 1️⃣ メインテーブル */
         .main-table {
             border-top: 2px solid #000000;
-            border-bottom: 2px solid #000000; /* 粗利率の下の実線 */
+            border-bottom: 2px solid #000000;
             margin-bottom: 20px;
         }
         .main-table td {
@@ -93,17 +93,22 @@
             border-bottom: none;
         }
 
-        /* 3️⃣ 現金差異テーブル */
+        /* 3️⃣ 現金差異テーブル（全体を中央寄せにする設定） */
         .diff-table {
             border-top: 2px solid #4CAF50;
             border-bottom: 2px solid #4CAF50;
+            table-layout: auto; /* 幅を固定せず文字に合わせる */
+        }
+        .diff-table tr {
+            text-align: center; /* 💡 行全体の中身を中央寄せにする */
         }
         .diff-table td {
             padding: 14px 0;
+            display: inline-block; /* 横並びにして中央に寄せるための設定 */
         }
-        /* 現金差異だけ指示通り「少し右（padding-leftを25px）」に配置 */
-        .diff-col-head { width: 32%; text-align: left; padding-left: 25px; }
-        .diff-col-data { width: 68%; text-align: right; padding-right: 15px; }
+        .diff-label-cell {
+            margin-right: 20px; /* 「現金差異」と「データ」の間の適度な隙間 */
+        }
     </style>
 </head>
 <body>
@@ -120,7 +125,9 @@
         <table class="main-table">
             <colgroup>
                 <col class="col-head">
-                <col class="col-mid">   <col class="col-count"> <col class="col-data">
+                <col class="col-mid">
+                <col class="col-count">
+                <col class="col-data">
             </colgroup>
             <tbody id="mainTableBody"></tbody>
         </table>
@@ -136,13 +143,9 @@
         </table>
 
         <table class="diff-table">
-            <colgroup>
-                <col class="diff-col-head">
-                <col class="diff-col-data">
-            </colgroup>
             <tbody>
                 <tr>
-                    <td id="diffLabel">現金差異</td>
+                    <td id="diffLabel" class="diff-label-cell">現金差異</td>
                     <td id="diffValue">￥0 差異無し</td>
                 </tr>
             </tbody>
@@ -205,7 +208,8 @@ async function fetchSummary(lineId) {
             contractValueText = `${matrix[3][1]} 客`;
             if (typeof matrix[3][4] === 'number') {
                 const rate = (matrix[3][4] * 100).toFixed(1);
-                contractValueText += ` &nbsp;&nbsp;&nbsp;&nbsp; 成約率 ${rate} %`;
+                // 💡 スマホの横幅で改行されないよう、スペース幅を少しスマートに調整
+                contractValueText += ` &nbsp;&nbsp; 成約率 ${rate} %`;
             }
         }
 
@@ -224,7 +228,6 @@ async function fetchSummary(lineId) {
             const tdLabel = document.createElement('td');
             tdLabel.textContent = row.label;
             
-            // メインテーブルは中見出し・件数カラムを空セルでスキップして右端に繋ぐ
             const tdEmpty1 = document.createElement('td');
             const tdEmpty2 = document.createElement('td');
             
@@ -302,4 +305,3 @@ initializeLiff();
 
 </body>
 </html>
-
