@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>本日の買取サマリー</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         /* 画面全体の基本設定：余白をなくし背景をシンプルに */
         body {
@@ -163,39 +164,72 @@
 </div>
 
 <script>
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyb_hqaf-iDps7h8oUQUzVGpA4M8zejJLzz6Nt2krq8CltBguKsvC44tCi0yoWu6I-y/exec";
+// 🔑 【要設定】
+const LIFF_ID = "2010292787-nAxhQtMo"; 
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycrdSScnT8wAkhPvreBgjf4woMwLzATUTBT2t8DvMkRC0tTykCjrb5NZVPZ0Y2bS5z/exec";
 
 // 💡 Google特有の変な日付文字を「26.6/05」形式に超綺麗に変換する職人ロジック
 function formatGoogleDate(dateStr) {
-    if (!dateStr) return "26.6/05"; // 万が一空ならデフォルト
+    if (!dateStr) return "26.6/05"; 
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr; // 変換できなければそのまま使う
+    if (isNaN(d.getTime())) return dateStr; 
     
     const yy = d.getFullYear().toString().slice(-2);
     const mm = d.getMonth() + 1;
-    const dd = d.getDate().toString().padStart(2, '0'); // 日付は2桁固定
+    const dd = d.getDate().toString().padStart(2, '0'); 
     
     return `${yy}.${mm}/${dd}`;
 }
 
-async function fetchSummary() {
+// 🚀 LIFFの初期化とLINE IDの取得からすべてを始めるメイン処理
+async function initializeLiff() {
     try {
-        const response = await fetch(GAS_API_URL);
+        // LIFFの初期化
+        await liff.init({ liffId: LIFF_ID });
+        
+        // LINE内ブラウザ、または外部ブラウザでログインしていなければログインさせる
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+        }
+
+        // 👤 開いたユーザーのLINEプロフィール（ID含む）を取得
+        const profile = await liff.getProfile();
+        const lineId = profile.userId; // これが暗号のようなLINE ID
+
+        // IDを持ってサマリーデータの自動読み込みへ進む
+        await fetchSummary(lineId);
+
+    } catch (error) {
+        document.getElementById('loading').innerHTML = `<span style="color:red;">LINE連携(LIFF)の初期化に失敗しました。</span>`;
+        console.error("LIFFエラー:", error);
+    }
+}
+
+// 📊 親玉GASから本人のスプレッドシートデータを引っ張ってきて画面を描く処理
+async function fetchSummary(lineId) {
+    try {
+        // 💡 【修正ポイント】URLの末尾に「?lineId=現在のユーザーID」を自動でくっつける！
+        const response = await fetch(`${GAS_API_URL}?lineId=${lineId}`);
         const json = await response.json();
         const matrix = json.data; // B2:G16 の2次元配列
 
-        // 1. 日付のセット (B2セル)
+        if (!matrix || matrix.length === 0) {
+            throw new Error("データが空か、マスタに登録がない可能性があります。");
+        }
+
+        // 1. 日付のセット (B2セル) + 確認用に名前を少し付け足す演出も可能
         const rawDate = matrix[0][0];
-        document.getElementById('dateHeader').textContent = formatGoogleDate(rawDate);
+        const titleText = formatGoogleDate(rawDate);
+        document.getElementById('dateHeader').textContent = json.senderName ? `${titleText} (${json.senderName})` : titleText;
 
         // 2. メインテーブル (来店〜粗利率) の組み立て
         const mainTableBody = document.getElementById('mainTableBody');
         mainTableBody.innerHTML = '';
         
-        // 来店、成約、買取額、卸予定額、見込粗利、粗利率 のインデックス
         const mainRows = [
             { label: '来店', val: matrix[1][1], unit: ' 客' },
-            { label: '成約', val: matrix[3][1], unit: ' 客', extra: `成約率  ${(matrix[3][4] * 100).toFixed(1)} %` },
+            { label: '成約', val: matrix[3][1], unit: ' 客', extra: `成約率  ${typeof matrix[3][4] === 'number' ? (matrix[3][4] * 100).toFixed(1) : "0.0"} %` },
             { label: '買取額', val: matrix[4][1], unit: ' 円' },
             { label: '卸予定額', val: matrix[5][1], unit: ' 円' },
             { label: '見込粗利', val: matrix[6][1], unit: ' 円' },
@@ -212,13 +246,11 @@ async function fetchSummary() {
             const tdValue = document.createElement('td');
             tdValue.className = 'col-value';
             
-            // 数値の3桁カンマ区切り整形
             let displayVal = row.val;
             if (typeof displayVal === 'number' && row.label !== '粗利率') {
                 displayVal = displayVal.toLocaleString();
             }
             
-            // 成約行の「成約率」などの横並び特殊テキスト対応
             if (row.extra) {
                 tdValue.innerHTML = `${displayVal}${row.unit} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${row.extra}`;
             } else {
@@ -279,7 +311,8 @@ async function fetchSummary() {
     }
 }
 
-fetchSummary();
+// 🎬 ページを開いた瞬間にLIFF制御をスタートさせる
+initializeLiff();
 </script>
 
 </body>
