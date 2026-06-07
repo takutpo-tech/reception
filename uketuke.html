@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>受付アップロード</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; margin: 0; position: relative; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -17,27 +18,27 @@
         #status-group { text-align: center; margin-top: 15px; }
         #loading { display: none; font-weight: bold; color: #34495e; }
         
-        /* 【改良】画面の真ん中に浮かび上がる完了バナー */
+        /* 画面の真ん中に浮かび上がる完了バナー */
         #completion-banner {
-            display: none; /* 初期状態は非表示 */
-            position: fixed; /* 画面に固定 */
-            top: 50%; /* 上から50% */
-            left: 50%; /* 左から50% */
-            transform: translate(-50%, -50%); /* 完全に真ん中に合わせる */
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 80%;
             max-width: 350px;
-            background-color: white; /* 清潔感のある白背景 */
-            color: #2ecc71; /* 文字は緑色 */
-            border: 2px solid #2ecc71; /* 緑の枠線 */
+            background-color: white;
+            color: #2ecc71;
+            border: 2px solid #2ecc71;
             padding: 25px 20px;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* 高級感のある影 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             font-size: 18px;
             font-weight: bold;
             text-align: center;
-            z-index: 1000; /* 最前面に表示 */
+            z-index: 1000;
             opacity: 1;
-            transition: opacity 0.5s ease; /* フェードアウト用 */
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
@@ -73,7 +74,7 @@
 
 <script>
 // 最新のGASウェブアプリURL
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx1IEWCmvUH3yvqnfbMe4iKY3XAvT62iqugHPpyO448qRgTUlm81sAklB9UziWiLc89og/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyLablfy4U1oaCYUHhr1YurSoLxjkBc3i7OZ73Hu6geT-NLGR-0hljwwqNTI2Pkc5mD/exec";
 
 // 画像をBase64に変換する関数
 function fileToBase64(file) {
@@ -92,7 +93,6 @@ function showCompletionBanner() {
     banner.style.display = 'block';
     banner.style.opacity = '1';
 
-    // 5秒（5000ミリ秒）後にフェードアウト開始
     setTimeout(() => {
         banner.style.opacity = '0';
         setTimeout(() => {
@@ -106,7 +106,6 @@ async function uploadImages() {
     const file2 = document.getElementById('file2').files[0];
     const file3 = document.getElementById('file3').files[0];
     
-    // ① 受付票（必須）のチェック
     if (!file1) {
         alert('① 受付票の画像は必須です！');
         return;
@@ -118,17 +117,29 @@ async function uploadImages() {
     
     btn.disabled = true;
     loading.style.display = 'block';
-    banner.style.display = 'none'; // 新しい送信時はバナーを隠す
+    banner.style.display = 'none';
     
     try {
         // =================================================================
-        // 🔍 【追加】URLのパラメータから「line_id」を自動取得する
+        // 🔍 【変更】LIFFを起動して、アクセスした人のLINE IDを自動で取得する
         // =================================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const lineId = urlParams.get('line_id');
+        let lineId = null;
+        try {
+            await liff.init({ liffId: "2010292787-nAxhQtMo" }); // スクショのLIFF IDをセット
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                lineId = profile.userId; // ログイン中のユーザーID（Uxxxx...）を取得
+            } else {
+                liff.login(); // LINEアプリ以外で開かれた場合はログインを促す
+                return;
+            }
+        } catch (liffError) {
+            alert('LINE認証に失敗しました: ' + liffError.toString());
+            return;
+        }
 
         if (!lineId) {
-            alert('エラー: LINE IDが特定できません。LINE公式アカウントからアクセスしてください。');
+            alert('エラー: LINE IDが特定できません。');
             return;
         }
 
@@ -140,36 +151,36 @@ async function uploadImages() {
         filesToSend.push({
             image: base64_1,
             name: file1.name,
-            type: "1" // 受付票
+            type: "1"
         });
 
-        // ファイル2（任意）があれば処理
+        // ファイル2（任意）
         if (file2) {
             const base64_2 = await fileToBase64(file2);
             filesToSend.push({
                 image: base64_2,
                 name: file2.name,
-                type: "2" // 商品画像1
+                type: "2"
             });
         }
 
-        // ファイル3（任意）があれば処理
+        // ファイル3（任意）
         if (file3) {
             const base64_3 = await fileToBase64(file3);
             filesToSend.push({
                 image: base64_3,
                 name: file3.name,
-                type: "3" // 商品画像2
+                type: "3"
             });
         }
         
-        // 複数ファイルを配列に含め、一緒に取得したlineIdを載せる
+        // 自動取得したlineIdを載せてペイロードを作成
         const payload = {
-            lineId: lineId, // ★ここを追加
+            lineId: lineId,
             files: filesToSend
         };
         
-        // GASのセキュリティ制限を突破するため mode: 'no-cors' で送信
+        // GASへ送信
         await fetch(GAS_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -179,10 +190,9 @@ async function uploadImages() {
             body: JSON.stringify(payload)
         });
         
-        // 中央の完了バナーを表示
         showCompletionBanner();
         
-        // 成功したらフォームをリセット
+        // フォームをリセット
         document.getElementById('file1').value = '';
         document.getElementById('file2').value = '';
         document.getElementById('file3').value = '';
