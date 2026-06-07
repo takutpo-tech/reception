@@ -62,11 +62,11 @@
             vertical-align: middle;
         }
 
-        /* 💡 大見出しの頭揃え（15px）を維持しつつ、成約の1行収めを実現する幅比率 */
-        .col-head  { width: 32%; text-align: left; padding-left: 15px; } /* 大見出し頭揃え位置 */
-        .col-mid   { width: 14%; text-align: left; }  /* 合計・明日位置 */
-        .col-count { width: 14%; text-align: left; }  /* 件数の位置を固定 */
-        .col-data  { width: 40%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; } /* 右端右揃え */
+        /* 大見出しの頭揃え（15pxあけ）を完全にロック */
+        .col-head  { width: 32%; text-align: left; padding-left: 15px; } 
+        .col-mid   { width: 14%; text-align: left; }  
+        .col-count { width: 14%; text-align: left; }  
+        .col-data  { width: 40%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; } 
 
         /* 1️⃣ メインテーブル */
         .main-table {
@@ -79,6 +79,19 @@
         }
         .main-table tr:last-child td {
             border-bottom: none;
+        }
+        
+        /* 💡 【重要】成約の行が絶対に改行されないための専用ルール */
+        .contract-row td.contract-val-cell {
+            text-align: left; /* 右に押し潰さず、左から流す */
+            padding-right: 15px;
+            white-space: nowrap; /* 何があっても絶対に自動改行させない */
+        }
+        .contract-row .contract-flex {
+            display: flex;
+            justify-content: space-between; /* 1客は中央付近、成約率は右端にきれいに分散 */
+            align-items: center;
+            width: 100%;
         }
 
         /* 2️⃣ サブテーブル */
@@ -93,21 +106,21 @@
             border-bottom: none;
         }
 
-        /* 3️⃣ 現金差異テーブル（全体を中央寄せにする設定） */
+        /* 3️⃣ 現金差異テーブル（中央寄せ＆間隔調整） */
         .diff-table {
             border-top: 2px solid #4CAF50;
             border-bottom: 2px solid #4CAF50;
-            table-layout: auto; /* 幅を固定せず文字に合わせる */
+            table-layout: auto;
         }
         .diff-table tr {
-            text-align: center; /* 💡 行全体の中身を中央寄せにする */
+            text-align: center; 
         }
         .diff-table td {
             padding: 14px 0;
-            display: inline-block; /* 横並びにして中央に寄せるための設定 */
+            display: inline-block; 
         }
         .diff-label-cell {
-            margin-right: 20px; /* 「現金差異」と「データ」の間の適度な隙間 */
+            margin-right: 40px; /* 💡 見出しとデータの間の間隔を広くしました */
         }
     </style>
 </head>
@@ -203,23 +216,25 @@ async function fetchSummary(lineId) {
         const mainTableBody = document.getElementById('mainTableBody');
         mainTableBody.innerHTML = '';
         
-        let contractValueText = "";
+        // 成約行のHTMLパーツを特別に組み立て
+        let contractHtml = "";
         if (matrix[3] && matrix[3][1] !== undefined) {
-            contractValueText = `${matrix[3][1]} 客`;
             if (typeof matrix[3][4] === 'number') {
                 const rate = (matrix[3][4] * 100).toFixed(1);
-                // 💡 スマホの横幅で改行されないよう、スペース幅を少しスマートに調整
-                contractValueText += ` &nbsp;&nbsp; 成約率 ${rate} %`;
+                // 1客と成約率を左右に綺麗に分ける構造
+                contractHtml = `<div class="contract-flex"><span>${matrix[3][1]} 客</span><span>成約率 ${rate} %</span></div>`;
+            } else {
+                contractHtml = `<div>${matrix[3][1]} 客</div>`;
             }
         }
 
         const mainRows = [
-            { label: '来店', val: (matrix[1] && typeof matrix[1][1] === 'number') ? `${matrix[1][1].toLocaleString()} 客` : `${(matrix[1] ? matrix[1][1] : 0)} 客` },
-            { label: '成約', val: contractValueText, isHtml: true },
-            { label: '買取額', val: (matrix[4] && typeof matrix[4][1] === 'number') ? `${matrix[4][1].toLocaleString()} 円` : `${(matrix[4] ? matrix[4][1] : 0)} 円` },
-            { label: '卸予定額', val: (matrix[5] && typeof matrix[5][1] === 'number') ? `${matrix[5][1].toLocaleString()} 円` : `${(matrix[5] ? matrix[5][1] : 0)} 円` },
-            { label: '見込粗利', val: (matrix[6] && typeof matrix[6][1] === 'number') ? `${matrix[6][1].toLocaleString()} 円` : `${(matrix[6] ? matrix[6][1] : 0)} 円` },
-            { label: '粗利率', val: (matrix[7] && typeof matrix[7][1] === 'number') ? `${(matrix[7][1] * 100).toFixed(1)} %` : (matrix[7] ? matrix[7][1] : '0.0 %') }
+            { label: '来店', val: (matrix[1] && typeof matrix[1][1] === 'number') ? `${matrix[1][1].toLocaleString()} 客` : `${(matrix[1] ? matrix[1][1] : 0)} 客`, isContract: false },
+            { label: '成約', val: contractHtml, isContract: true }, // 特別ルール適用
+            { label: '買取額', val: (matrix[4] && typeof matrix[4][1] === 'number') ? `${matrix[4][1].toLocaleString()} 円` : `${(matrix[4] ? matrix[4][1] : 0)} 円`, isContract: false },
+            { label: '卸予定額', val: (matrix[5] && typeof matrix[5][1] === 'number') ? `${matrix[5][1].toLocaleString()} 円` : `${(matrix[5] ? matrix[5][1] : 0)} 円`, isContract: false },
+            { label: '見込粗利', val: (matrix[6] && typeof matrix[6][1] === 'number') ? `${matrix[6][1].toLocaleString()} 円` : `${(matrix[6] ? matrix[6][1] : 0)} 円`, isContract: false },
+            { label: '粗利率', val: (matrix[7] && typeof matrix[7][1] === 'number') ? `${(matrix[7][1] * 100).toFixed(1)} %` : (matrix[7] ? matrix[7][1] : '0.0 %'), isContract: false }
         ];
 
         mainRows.forEach(row => {
@@ -227,22 +242,28 @@ async function fetchSummary(lineId) {
             
             const tdLabel = document.createElement('td');
             tdLabel.textContent = row.label;
+            tr.appendChild(tdLabel);
             
-            const tdEmpty1 = document.createElement('td');
-            const tdEmpty2 = document.createElement('td');
-            
-            const tdValue = document.createElement('td');
-            tdValue.className = 'col-data';
-            if (row.isHtml) {
+            if (row.isContract) {
+                // 💡 成約の行だけは、幅の制限を受けないように残りの3列を1つに合体させて広々使う
+                tr.className = 'contract-row';
+                const tdValue = document.createElement('td');
+                tdValue.colSpan = 3;
+                tdValue.className = 'contract-val-cell';
                 tdValue.innerHTML = row.val;
+                tr.appendChild(tdValue);
             } else {
+                const tdEmpty1 = document.createElement('td');
+                const tdEmpty2 = document.createElement('td');
+                const tdValue = document.createElement('td');
+                tdValue.className = 'col-data';
                 tdValue.textContent = row.val;
+                
+                tr.appendChild(tdEmpty1);
+                tr.appendChild(tdEmpty2);
+                tr.appendChild(tdValue);
             }
             
-            tr.appendChild(tdLabel);
-            tr.appendChild(tdEmpty1);
-            tr.appendChild(tdEmpty2);
-            tr.appendChild(tdValue);
             mainTableBody.appendChild(tr);
         });
 
