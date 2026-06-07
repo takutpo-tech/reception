@@ -45,69 +45,67 @@
             font-weight: bold;
             letter-spacing: 1px;
             margin-bottom: 8px;
-            padding-left: 4px;
+            padding-left: 15px; /* 見出しの頭揃え位置に合わせる */
         }
+        
+        /* 📋 全テーブル共通の基本ルール */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 28px;
-        }
-        .main-table {
-            border-top: 2px solid #000000;
-            border-bottom: 2px solid #000000;
+            table-layout: fixed; /* 列の幅を％で完全に固定するおまじない */
         }
         td {
-            padding: 12px 6px;
+            padding: 12px 0;
             font-size: 18px;
             font-weight: bold;
             color: #000000;
+            vertical-align: middle;
+        }
+
+        /* 1️⃣ メインテーブル（来店〜粗利率） */
+        .main-table {
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000; /* 粗利率の下の実線 */
+            margin-bottom: 20px;
         }
         .main-table td {
             border-bottom: 1px dotted #999999;
         }
         .main-table tr:last-child td {
-            border-bottom: none;
+            border-bottom: none; /* 粗利率のドット線は消して実線を生かす */
         }
-        .col-label {
-            text-align: left;
-            width: 30%;
-            padding-left: 35px;
+        /* 幅の比率: 見出し32% / 残り全部68% */
+        .main-col-label { width: 32%; text-align: left; padding-left: 15px; }
+        .main-col-value { width: 68%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; }
+
+        /* 2️⃣ サブテーブル（振込依頼・現金用意） */
+        .sub-table {
+            margin-bottom: 25px;
         }
-        .col-value {
-            text-align: right;
-            width: 70%;
-            padding-right: 35px;
-            font-variant-numeric: tabular-nums;
-        }
-        .triple-row td {
+        .sub-table td {
             border-bottom: 1px dotted #CCCCCC;
         }
-        .triple-row tr:nth-child(2) td, 
-        .triple-row tr:last-child td {
-            border-bottom: none;
+        .sub-table tr:nth-child(2) td, 
+        .sub-table tr:last-child td {
+            border-bottom: none; /* グループごとの区切りをきれいに */
         }
-        .col-3-1 { text-align: left; width: 30%; padding-left: 15px; }
-        .col-3-2 { text-align: center; width: 20%; color: #000000; }
-        .col-3-3 { text-align: right; width: 50%; padding-right: 15px; font-variant-numeric: tabular-nums; }
+        /* 幅の比率: 大見出し32% / 中見出し15% / 件数18% / 金額右揃え35% */
+        .sub-col-1 { width: 32%; text-align: left; padding-left: 15px; } /* 大見出し頭揃え */
+        .sub-col-2 { width: 15%; text-align: left; }  /* 合計・明日をもっと左へ */
+        .sub-col-3 { width: 18%; text-align: left; }  /* 件数の位置を4つ完全に統一 */
+        .sub-col-4 { width: 35%; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; } /* 右端に右揃え */
+
+        /* 3️⃣ 現金差異テーブル */
         .diff-table {
             border-top: 2px solid #4CAF50;
             border-bottom: 2px solid #4CAF50;
-            margin-top: 10px;
         }
         .diff-table td {
-            padding: 14px 6px;
+            padding: 14px 0;
         }
-        .col-diff-label {
-            text-align: left;
-            width: 40%;
-            padding-left: 25px;
-            color: #000000;
-        }
-        .col-diff-value {
-            text-align: center;
-            width: 60%;
-            color: #000000;
-        }
+        /* 現金差異は「少し右に」するため、padding-leftを15px→25pxに微調整 */
+        .diff-col-label { width: 32%; text-align: left; padding-left: 25px; }
+        .diff-col-value { width: 68%; text-align: right; padding-right: 15px; } /* 現状の位置（右揃え）をキープ */
     </style>
 </head>
 <body>
@@ -122,18 +120,32 @@
         <div id="dateHeader" class="date-header"></div>
 
         <table class="main-table">
+            <colgroup>
+                <col class="main-col-label">
+                <col class="main-col-value">
+            </colgroup>
             <tbody id="mainTableBody"></tbody>
         </table>
 
-        <table class="triple-row">
+        <table class="sub-table">
+            <colgroup>
+                <col class="sub-col-1">
+                <col class="sub-col-2">
+                <col class="sub-col-3">
+                <col class="sub-col-4">
+            </colgroup>
             <tbody id="subTableBody"></tbody>
         </table>
 
         <table class="diff-table">
+            <colgroup>
+                <col class="diff-col-label">
+                <col class="diff-col-value">
+            </colgroup>
             <tbody>
                 <tr>
-                    <td id="diffLabel" class="col-diff-label">現金差異</td>
-                    <td id="diffValue" class="col-diff-value">￥0 差異無し</td>
+                    <td id="diffLabel">現金差異</td>
+                    <td id="diffValue">￥0 差異無し</td>
                 </tr>
             </tbody>
         </table>
@@ -182,7 +194,7 @@ async function fetchSummary(lineId) {
             throw new Error("データが空か、マスタに登録がない可能性があります。");
         }
 
-        // 1. 日付のセット (B2セル) ※名前なし
+        // 1. 日付のセット (B2セル)
         const rawDate = matrix[0][0];
         document.getElementById('dateHeader').textContent = formatGoogleDate(rawDate);
 
@@ -211,12 +223,9 @@ async function fetchSummary(lineId) {
         mainRows.forEach(row => {
             const tr = document.createElement('tr');
             const tdLabel = document.createElement('td');
-            tdLabel.className = 'col-label';
             tdLabel.textContent = row.label;
             
             const tdValue = document.createElement('td');
-            tdValue.className = 'col-value';
-            
             if (row.isHtml) {
                 tdValue.innerHTML = row.val;
             } else {
@@ -240,35 +249,36 @@ async function fetchSummary(lineId) {
 
         subRows.forEach(row => {
             const tr = document.createElement('tr');
+            
+            // 各セルの生成
             const tdGroup = document.createElement('td');
-            tdGroup.className = 'col-3-1';
             tdGroup.textContent = row.group;
             
             const tdType = document.createElement('td');
-            tdType.className = 'col-3-2';
             tdType.textContent = row.type;
             
-            const tdData = document.createElement('td');
-            tdData.className = 'col-3-3';
-            
+            const tdCount = document.createElement('td');
             const cStr = typeof row.count === 'number' ? row.count : 0;
+            tdCount.textContent = `${cStr} 件`;
+            
+            const tdPrice = document.createElement('td');
             const pStr = typeof row.price === 'number' ? row.price.toLocaleString() : 0;
-            // 💡 ブラウザにスペースを潰されないよう、特殊な空白「&nbsp;」で強制的に隙間を作ります
-            tdData.innerHTML = `${cStr} 件 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${pStr} 円`;
+            tdPrice.textContent = `${pStr} 円`;
             
             tr.appendChild(tdGroup);
             tr.appendChild(tdType);
-            tr.appendChild(tdData);
+            tr.appendChild(tdCount);
+            tr.appendChild(tdPrice);
             subTableBody.appendChild(tr);
         });
 
-        // 💡 4. 消えていた「現金差異」と「表示切り替え」を完全に復活
+        // 4. 現金差異のセット
         if (matrix[14]) {
             document.getElementById('diffLabel').textContent = matrix[14][0] || "現金差異";
             document.getElementById('diffValue').textContent = matrix[14][2] || "￥0 差異無し";
         }
 
-        // 💡 読み込み中を消して、サマリーボックスをパッと出す
+        // 表示の切り替え
         document.getElementById('loading').style.display = 'none';
         document.getElementById('summaryBox').style.display = 'block';
 
