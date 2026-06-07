@@ -73,7 +73,7 @@
 
 <script>
 // 最新のGASウェブアプリURL
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwgcm5obkvEbi40JsKhcfgDyKwA4UCT9fjEmfVLoLmoDejSHAQCjOXdUzTjYnnEQeS3Dw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwPkaspE8DMOXM9Vgvnt9h5Gex_x2kW7NbO4Ba4beUAkPyp3_uwGl0GS-m9gvBQTRUNDA/exec";
 
 // 画像をBase64に変換する関数
 function fileToBase64(file) {
@@ -121,6 +121,17 @@ async function uploadImages() {
     banner.style.display = 'none'; // 新しい送信時はバナーを隠す
     
     try {
+        // =================================================================
+        // 🔍 【追加】URLのパラメータから「line_id」を自動取得する
+        // =================================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const lineId = urlParams.get('line_id');
+
+        if (!lineId) {
+            alert('エラー: LINE IDが特定できません。LINE公式アカウントからアクセスしてください。');
+            return;
+        }
+
         // GASへ送る配列を準備
         const filesToSend = [];
 
@@ -152,8 +163,9 @@ async function uploadImages() {
             });
         }
         
-        // 複数ファイルを配列に含めたオブジェクトをペイロードにする
+        // 複数ファイルを配列に含め、一緒に取得したlineIdを載せる
         const payload = {
+            lineId: lineId, // ★ここを追加
             files: filesToSend
         };
         
