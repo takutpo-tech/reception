@@ -10,30 +10,35 @@
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(44, 62, 80, 0.06); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; margin-top: 5px; font-weight: bold; }
         
-        .form-group { margin-bottom: 20px; }
-        
-        /* 左右のレイアウト構造 */
-        .upload-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-        }
-        
-        /* 左側のブロック：テキストのみになり、よりシンプルに */
-        .info-block {
-            flex: 1;
+        /* 1つのグループを中央揃えにする設定 */
+        .form-group-center {
             display: flex;
             flex-direction: column;
-            padding-left: 10px;
+            align-items: center;
+            margin-bottom: 25px;
         }
         
-        label.item-title { display: block; font-weight: bold; font-size: 15px; margin: 0; color: #4a5568; }
+        /* 商品画像①・②を横並びにするコンテナ */
+        .product-images-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* ①と②の間の隙間 */
+            margin-bottom: 15px;
+        }
         
-        /* サムネイル枠自体をタップ可能なボタン（label）に変更 */
-        .thumbnail-btn-box {
-            width: 145px;
-            height: 145px;
+        /* 横並び時の各商品ブロック（文字と枠を縦に並べる） */
+        .product-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        label { font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #4a5568; text-align: center; }
+        
+        /* 受付票用の大きなサムネイル枠（中央配置用） */
+        .main-thumbnail-box {
+            width: 150px;
+            height: 150px;
             border: 2px dashed #cbd5e1;
             border-radius: 8px;
             background: #f8fafc;
@@ -42,46 +47,38 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
-            flex-shrink: 0;
-            margin-right: 10px;
-            cursor: pointer; /* マウスを乗せたら指マークになる（PC確認用） */
+            cursor: pointer;
             transition: background-color 0.2s, border-color 0.2s;
         }
+        .main-thumbnail-box:active { background-color: #f1f5f9; border-color: #94a3b8; }
+        .main-thumbnail-box input[type="file"] { display: none; }
+        .main-thumbnail-box img { width: 100%; height: 100%; object-fit: cover; display: none; z-index: 2; }
+        .main-thumbnail-box::before { content: "📷"; font-size: 28px; color: #94a3b8; position: absolute; z-index: 1; }
+        .main-thumbnail-box.has-image::before { display: none; }
         
-        /* タップした時に一瞬少し色が変わる演出（押し心地アップ） */
-        .thumbnail-btn-box:active {
-            background-color: #f1f5f9;
-            border-color: #94a3b8;
+        /* 商品画像①・②用のサムネイル枠（横並び用に少しだけコンパクトに） */
+        .sub-thumbnail-box {
+            width: 130px;
+            height: 130px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
         }
-        
-        /* 実際のファイル入力は裏に隠す */
-        .thumbnail-btn-box input[type="file"] {
-            display: none;
-        }
-        
-        /* 枠内のプレビュー画像 */
-        .thumbnail-btn-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-            z-index: 2;
-        }
-        
-        /* 未選択時の表示（カメラの絵文字） */
-        .thumbnail-btn-box::before {
-            content: "📷";
-            font-size: 26px; /* 枠がボタンになったので気持ち大きく */
-            color: #94a3b8;
-            position: absolute;
-            z-index: 1;
-        }
-        .thumbnail-btn-box.has-image::before {
-            display: none;
-        }
+        .sub-thumbnail-box:active { background-color: #f1f5f9; border-color: #94a3b8; }
+        .sub-thumbnail-box input[type="file"] { display: none; }
+        .sub-thumbnail-box img { width: 100%; height: 100%; object-fit: cover; display: none; z-index: 2; }
+        .sub-thumbnail-box::before { content: "📷"; font-size: 24px; color: #94a3b8; position: absolute; z-index: 1; }
+        .sub-thumbnail-box.has-image::before { display: none; }
 
         /* 送信ボタン */
-        button#submitBtn { width: 100%; background-color: #2b4c7e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 25px; box-shadow: 0 4px 12px rgba(43, 76, 126, 0.2); }
+        button#submitBtn { width: 100%; background-color: #2b4c7e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 15px; box-shadow: 0 4px 12px rgba(43, 76, 126, 0.2); }
         button#submitBtn:hover { background-color: #1a3358; }
         button#submitBtn:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; }
         
@@ -121,37 +118,26 @@
 <div class="container">
     <h2>受付票アップロード</h2>
     
-    <div class="form-group">
-        <div class="upload-row">
-            <div class="info-block">
-                <label class="item-title">受付票の画像</label>
-            </div>
-            <!-- 枠自体が画像選択ボタンに進化 -->
-            <label class="thumbnail-btn-box" id="box1">
-                <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 'preview1', 'box1')">
-                <img id="preview1" src="" alt="プレビュー">
-            </label>
-        </div>
+    <div class="form-group-center">
+        <label>受付票の画像</label>
+        <label class="main-thumbnail-box" id="box1">
+            <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 'preview1', 'box1')">
+            <img id="preview1" src="" alt="プレビュー">
+        </label>
     </div>
     
-    <div class="form-group">
-        <div class="upload-row">
-            <div class="info-block">
-                <label class="item-title">商品画像①</label>
-            </div>
-            <label class="thumbnail-btn-box" id="box2">
+    <div class="product-images-row">
+        <div class="product-block">
+            <label>商品画像①</label>
+            <label class="sub-thumbnail-box" id="box2">
                 <input type="file" id="file2" accept="image/*" onchange="previewImage(this, 'preview2', 'box2')">
                 <img id="preview2" src="" alt="プレビュー">
             </label>
         </div>
-    </div>
-    
-    <div class="form-group">
-        <div class="upload-row">
-            <div class="info-block">
-                <label class="item-title">商品画像②</label>
-            </div>
-            <label class="thumbnail-btn-box" id="box3">
+        
+        <div class="product-block">
+            <label>商品画像②</label>
+            <label class="sub-thumbnail-box" id="box3">
                 <input type="file" id="file3" accept="image/*" onchange="previewImage(this, 'preview3', 'box3')">
                 <img id="preview3" src="" alt="プレビュー">
             </label>
@@ -242,7 +228,7 @@ async function uploadImages() {
     }
     
     if (!globalLineId) {
-        alert('エラー: LINE IDがまだ読み込まれたいません。一瞬待ってから再度お試しください。');
+        alert('エラー: LINE IDがまだ読み込まれていません。一瞬待ってから再度お試しください。');
         return;
     }
     
