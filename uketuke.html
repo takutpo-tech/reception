@@ -6,48 +6,84 @@
     <title>受付表アップロード</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; margin: 0; position: relative; }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 24px; }
-        .form-group { margin-bottom: 25px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 15px; }
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 15px; color: #333; margin: 0; position: relative; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 22px; margin-top: 5px; }
         
-        /* ファイル選択エリアを大きなボタン風にカスタム */
-        .file-dropzone {
-            display: block;
-            position: relative;
-            background: #f9f9f9;
-            border: 2px dashed #ddd;
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
+        
+        /* ボタンと画像枠を横並びにするコンテナ */
+        .upload-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            background: #fafafa;
+            padding: 10px;
             border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
+            border: 1px solid #eaeaea;
         }
-        .file-dropzone:hover { background: #f0f3f5; border-color: #b0bfc6; }
-        .file-dropzone input[type="file"] { display: none; } /* 本物のインプットは隠す */
-        .file-text { font-size: 14px; color: #7f8c8d; font-weight: bold; }
         
-        /* サムネイルを大きく綺麗に表示 */
-        .thumbnail-container {
-            margin-top: 10px;
+        /* 「選択」ボタンの見た目カスタム */
+        .file-select-btn {
+            flex: 1;
+            display: block;
+            background-color: #34495e;
+            color: white;
             text-align: center;
-        }
-        .thumbnail-container img {
-            max-width: 100%;
-            max-height: 250px; /* 必要に応じて高さを調整してください */
+            padding: 12px 0;
+            font-size: 14px;
+            font-weight: bold;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .file-select-btn:hover { background-color: #2c3e50; }
+        .file-select-btn input[type="file"] { display: none; }
+        
+        /* 最初から右側においておく固定の画像枠 */
+        .thumbnail-box {
+            width: 70px;
+            height: 70px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0; /* スマホ画面で潰れないように固定 */
+        }
+        
+        /* 枠内のプレビュー画像（最初は非表示） */
+        .thumbnail-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 枠内に綺麗に収める設定 */
+            display: none;
+        }
+        
+        /* 画像がない時のうっすらしたプレースホルダー（「なし」などの文字） */
+        .thumbnail-box::before {
+            content: "未選択";
+            font-size: 11px;
+            color: #aaa;
+            position: absolute;
+        }
+        /* 画像が表示されたら「未選択」の文字を消す設定 */
+        .thumbnail-box.has-image::before {
             display: none;
         }
 
-        button { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 10px; }
-        button:hover { background-color: #27ae60; }
-        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        #status-group { text-align: center; margin-top: 15px; }
-        #loading { display: none; font-weight: bold; color: #34495e; }
+        button#submitBtn { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 15px; }
+        button#submitBtn:hover { background-color: #27ae60; }
+        button#submitBtn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        #status-group { text-align: center; margin-top: 10px; }
+        #loading { display: none; font-weight: bold; color: #34495e; font-size: 14px; }
         
-        /* 画面の真ん中に浮かび上がる完了バナー */
+        /* 完了バナー */
         #completion-banner {
             display: none;
             position: fixed;
@@ -82,34 +118,40 @@
     
     <div class="form-group">
         <label>① 受付票の画像</label>
-        <label class="file-dropzone">
-            <span class="file-text">ファイルを選択</span>
-            <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 'preview1')">
-        </label>
-        <div class="thumbnail-container">
-            <img id="preview1" src="" alt="プレビュー">
+        <div class="upload-row">
+            <label class="file-select-btn">
+                選択
+                <input type="file" id="file1" accept="image/*" onchange="previewImage(this, 'preview1', 'box1')">
+            </label>
+            <div class="thumbnail-box" id="box1">
+                <img id="preview1" src="" alt="プレビュー">
+            </div>
         </div>
     </div>
     
     <div class="form-group">
-        <label>② 商品の画像1</label>
-        <label class="file-dropzone">
-            <span class="file-text">ファイルを選択</span>
-            <input type="file" id="file2" accept="image/*" onchange="previewImage(this, 'preview2')">
-        </label>
-        <div class="thumbnail-container">
-            <img id="preview2" src="" alt="プレビュー">
+        <label>② 商品画像①</label>
+        <div class="upload-row">
+            <label class="file-select-btn">
+                選択
+                <input type="file" id="file2" accept="image/*" onchange="previewImage(this, 'preview2', 'box2')">
+            </label>
+            <div class="thumbnail-box" id="box2">
+                <img id="preview2" src="" alt="プレビュー">
+            </div>
         </div>
     </div>
     
     <div class="form-group">
-        <label>③ 商品の画像2</label>
-        <label class="file-dropzone">
-            <span class="file-text">ファイルを選択</span>
-            <input type="file" id="file3" accept="image/*" onchange="previewImage(this, 'preview3')">
-        </label>
-        <div class="thumbnail-container">
-            <img id="preview3" src="" alt="プレビュー">
+        <label>③ 商品画像②</label>
+        <div class="upload-row">
+            <label class="file-select-btn">
+                選択
+                <input type="file" id="file3" accept="image/*" onchange="previewImage(this, 'preview3', 'box3')">
+            </label>
+            <div class="thumbnail-box" id="box3">
+                <img id="preview3" src="" alt="プレビュー">
+            </div>
         </div>
     </div>
     
@@ -122,10 +164,8 @@
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyLablfy4U1oaCYUHhr1YurSoLxjkBc3i7OZ73Hu6geT-NLGR-0hljwwqNTI2Pkc5mD/exec";
 
-// グローバル変数としてLINE IDを保持する領域を作っておく
 let globalLineId = null;
 
-// 【超重要】画面が開いた瞬間に、裏側で自動的にLINE IDを取得完了させておく安全な初期化
 window.onload = function() {
     liff.init({ liffId: "2010292787-nAxhQtMo" })
         .then(() => {
@@ -137,7 +177,7 @@ window.onload = function() {
         })
         .then(profile => {
             if (profile) {
-                globalLineId = profile.userId; // 事前にIDをキープ！
+                globalLineId = profile.userId;
             }
         })
         .catch(err => {
@@ -145,21 +185,24 @@ window.onload = function() {
         });
 };
 
-// 画像プレビューを大きく表示する処理（ファイル名は出さない）
-function previewImage(input, previewId) {
+// 画像プレビュー処理（右側の固定枠にはめ込む）
+function previewImage(input, previewId, boxId) {
     const preview = document.getElementById(previewId);
+    const box = document.getElementById(boxId);
     const file = input.files[0];
     
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
-            preview.style.display = 'inline-block';
+            preview.style.display = 'block';
+            box.classList.add('has-image'); // 「未選択」の文字を隠す
         }
         reader.readAsDataURL(file);
     } else {
         preview.src = '';
         preview.style.display = 'none';
+        box.classList.remove('has-image'); // 「未選択」の文字を再表示
     }
 }
 
@@ -186,7 +229,6 @@ function showCompletionBanner() {
     }, 5000);
 }
 
-// ボタンを押したときの処理
 async function uploadImages() {
     const file1 = document.getElementById('file1').files[0];
     const file2 = document.getElementById('file2').files[0];
@@ -198,7 +240,7 @@ async function uploadImages() {
     }
     
     if (!globalLineId) {
-        alert('エラー: LINE IDがまだ読み込まれたいません。一瞬待ってから再度お試しください。');
+        alert('エラー: LINE IDがまだ読み込まれていません。一瞬待ってから再度お試しください。');
         return;
     }
     
@@ -254,13 +296,19 @@ async function uploadImages() {
         
         showCompletionBanner();
         
-        // 送信後にフォームとプレビューをリセット
+        // 送信後にリセット
         document.getElementById('file1').value = '';
         document.getElementById('file2').value = '';
         document.getElementById('file3').value = '';
-        document.getElementById('preview1').style.display = 'none';
-        document.getElementById('preview2').style.display = 'none';
-        document.getElementById('preview3').style.display = 'none';
+        
+        // プレビューと枠の状態もリセット
+        ['preview1', 'preview2', 'preview3'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+            document.getElementById(id).src = '';
+        });
+        ['box1', 'box2', 'box3'].forEach(id => {
+            document.getElementById(id).classList.remove('has-image');
+        });
         
     } catch (error) {
         alert('通信エラーが発生しました: ' + error.toString());
