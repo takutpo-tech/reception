@@ -12,7 +12,7 @@
         
         .form-group { margin-bottom: 20px; }
         
-        /* レイアウトの肝：左に文字とボタン、右に画面いっぱいのサムネ */
+        /* レイアウトの調整：左右のバランスを調整 */
         .upload-row {
             display: flex;
             align-items: center;
@@ -20,19 +20,20 @@
             gap: 15px;
         }
         
-        /* 左側のテキストとボタンをまとめるブロック */
+        /* 左側のブロック：少し右（中央寄り）に寄せるために左マージンを追加 */
         .info-block {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            padding-left: 15px; /* すみっこから少し中央寄りに移動 */
         }
         
         label { display: block; font-weight: bold; font-size: 14px; margin: 0; }
         
-        /* 「画像を選択」ボタン：文字幅に合わせたコンパクトサイズ */
+        /* 「画像を選択」ボタン */
         .file-select-btn {
-            align-self: flex-start; /* ボタンが横に広がらないように制御 */
+            align-self: flex-start;
             display: inline-block;
             background-color: #34495e;
             color: white;
@@ -48,10 +49,10 @@
         .file-select-btn:hover { background-color: #2c3e50; }
         .file-select-btn input[type="file"] { display: none; }
         
-        /* 右側スペースを限界まで広げた大きな正方形の画像枠 */
+        /* 画面右端のギリギリまで攻めた特大サムネイル枠 */
         .thumbnail-box {
-            width: 140px;  /* スマホ画面の右側いっぱいに広がるサイズに変形 */
-            height: 140px; /* 縦横しっかり大きく */
+            width: 165px;  /* 140pxから165pxにさらに拡大 */
+            height: 165px; /* 縦横しっかり大きく */
             border: 2px dashed #ccc;
             border-radius: 6px;
             background: #fafafa;
@@ -60,7 +61,7 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
-            flex-shrink: 0; /* 画面幅が狭くても潰れないように固定 */
+            flex-shrink: 0;
         }
         
         /* 枠内のプレビュー画像 */
@@ -75,7 +76,7 @@
         /* 未選択時の文字 */
         .thumbnail-box::before {
             content: "未選択";
-            font-size: 12px;
+            font-size: 13px;
             color: #aaa;
             position: absolute;
             z-index: 1;
@@ -84,7 +85,7 @@
             display: none;
         }
 
-        button#submitBtn { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 20px; }
+        button#submitBtn { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 25px; }
         button#submitBtn:hover { background-color: #27ae60; }
         button#submitBtn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
         #status-group { text-align: center; margin-top: 10px; }
