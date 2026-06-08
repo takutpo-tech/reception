@@ -6,7 +6,6 @@
     <title>受付票アップロード</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        /* 背景色をセンスの良い淡いミントブルー調に（清潔感と今風のニュアンス） */
         body { font-family: sans-serif; background-color: #eef3f5; padding: 15px; color: #333; margin: 0; position: relative; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(44, 62, 80, 0.06); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; margin-top: 5px; font-weight: bold; }
@@ -21,7 +20,7 @@
             gap: 15px;
         }
         
-        /* 左側のブロック：すみっこから少し中央寄りに配置 */
+        /* 左側のブロック */
         .info-block {
             flex: 1;
             display: flex;
@@ -32,7 +31,7 @@
         
         label { display: block; font-weight: bold; font-size: 14px; margin: 0; color: #4a5568; }
         
-        /* 「画像を選択」ボタン：シックなチャコールグレー */
+        /* 「画像を選択」ボタン */
         .file-select-btn {
             align-self: flex-start;
             display: inline-block;
@@ -50,10 +49,10 @@
         .file-select-btn:hover { background-color: #2d3748; }
         .file-select-btn input[type="file"] { display: none; }
         
-        /* 特大サムネイル枠：右に寄りすぎないよう右マージン（padding-right）で中央へ寄せる */
+        /* サムネイル枠：どのスマホでも収まるように145pxに調整 */
         .thumbnail-box {
-            width: 165px;
-            height: 165px;
+            width: 145px;
+            height: 145px;
             border: 2px dashed #cbd5e1;
             border-radius: 8px;
             background: #f8fafc;
@@ -63,7 +62,7 @@
             overflow: hidden;
             position: relative;
             flex-shrink: 0;
-            margin-right: 10px; /* 右端の壁から少し離して中央寄りに */
+            margin-right: 10px;
         }
         
         /* 枠内のプレビュー画像 */
@@ -75,10 +74,10 @@
             z-index: 2;
         }
         
-        /* 未選択時の文字 */
+        /* 未選択時の表示（カメラの絵文字に変更） */
         .thumbnail-box::before {
-            content: "未選択";
-            font-size: 13px;
+            content: "📷";
+            font-size: 24px; /* カメラマークを少し大きめに */
             color: #94a3b8;
             position: absolute;
             z-index: 1;
@@ -87,7 +86,7 @@
             display: none;
         }
 
-        /* 送信ボタン：LINEっぽさを脱却した、高級感と信頼感のあるディープネイビーブルー */
+        /* 送信ボタン */
         button#submitBtn { width: 100%; background-color: #2b4c7e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 25px; box-shadow: 0 4px 12px rgba(43, 76, 126, 0.2); }
         button#submitBtn:hover { background-color: #1a3358; }
         button#submitBtn:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; }
@@ -95,7 +94,7 @@
         #status-group { text-align: center; margin-top: 12px; }
         #loading { display: none; font-weight: bold; color: #4a5568; font-size: 14px; }
         
-        /* 完了バナー：ボタンの色と連動 */
+        /* 完了バナー */
         #completion-banner {
             display: none;
             position: fixed;
