@@ -6,13 +6,14 @@
     <title>受付票アップロード</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 15px; color: #333; margin: 0; position: relative; }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; margin-top: 5px; }
+        /* 背景色をセンスの良い淡いミントブルー調に（清潔感と今風のニュアンス） */
+        body { font-family: sans-serif; background-color: #eef3f5; padding: 15px; color: #333; margin: 0; position: relative; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(44, 62, 80, 0.06); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 22px; margin-top: 5px; font-weight: bold; }
         
         .form-group { margin-bottom: 20px; }
         
-        /* レイアウトの調整：左右のバランスを調整 */
+        /* 左右のレイアウト構造 */
         .upload-row {
             display: flex;
             align-items: center;
@@ -20,25 +21,25 @@
             gap: 15px;
         }
         
-        /* 左側のブロック：少し右（中央寄り）に寄せるために左マージンを追加 */
+        /* 左側のブロック：すみっこから少し中央寄りに配置 */
         .info-block {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            padding-left: 15px; /* すみっこから少し中央寄りに移動 */
+            padding-left: 10px;
         }
         
-        label { display: block; font-weight: bold; font-size: 14px; margin: 0; }
+        label { display: block; font-weight: bold; font-size: 14px; margin: 0; color: #4a5568; }
         
-        /* 「画像を選択」ボタン */
+        /* 「画像を選択」ボタン：シックなチャコールグレー */
         .file-select-btn {
             align-self: flex-start;
             display: inline-block;
-            background-color: #34495e;
+            background-color: #4a5568;
             color: white;
             text-align: center;
-            padding: 10px 15px;
+            padding: 9px 14px;
             font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
@@ -46,22 +47,23 @@
             transition: background 0.2s;
             white-space: nowrap;
         }
-        .file-select-btn:hover { background-color: #2c3e50; }
+        .file-select-btn:hover { background-color: #2d3748; }
         .file-select-btn input[type="file"] { display: none; }
         
-        /* 画面右端のギリギリまで攻めた特大サムネイル枠 */
+        /* 特大サムネイル枠：右に寄りすぎないよう右マージン（padding-right）で中央へ寄せる */
         .thumbnail-box {
-            width: 165px;  /* 140pxから165pxにさらに拡大 */
-            height: 165px; /* 縦横しっかり大きく */
-            border: 2px dashed #ccc;
-            border-radius: 6px;
-            background: #fafafa;
+            width: 165px;
+            height: 165px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
             flex-shrink: 0;
+            margin-right: 10px; /* 右端の壁から少し離して中央寄りに */
         }
         
         /* 枠内のプレビュー画像 */
@@ -77,7 +79,7 @@
         .thumbnail-box::before {
             content: "未選択";
             font-size: 13px;
-            color: #aaa;
+            color: #94a3b8;
             position: absolute;
             z-index: 1;
         }
@@ -85,13 +87,15 @@
             display: none;
         }
 
-        button#submitBtn { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 25px; }
-        button#submitBtn:hover { background-color: #27ae60; }
-        button#submitBtn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        #status-group { text-align: center; margin-top: 10px; }
-        #loading { display: none; font-weight: bold; color: #34495e; font-size: 14px; }
+        /* 送信ボタン：LINEっぽさを脱却した、高級感と信頼感のあるディープネイビーブルー */
+        button#submitBtn { width: 100%; background-color: #2b4c7e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s, opacity 0.5s; margin-top: 25px; box-shadow: 0 4px 12px rgba(43, 76, 126, 0.2); }
+        button#submitBtn:hover { background-color: #1a3358; }
+        button#submitBtn:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; }
         
-        /* 完了バナー */
+        #status-group { text-align: center; margin-top: 12px; }
+        #loading { display: none; font-weight: bold; color: #4a5568; font-size: 14px; }
+        
+        /* 完了バナー：ボタンの色と連動 */
         #completion-banner {
             display: none;
             position: fixed;
@@ -101,8 +105,8 @@
             width: 80%;
             max-width: 350px;
             background-color: white;
-            color: #2ecc71;
-            border: 2px solid #2ecc71;
+            color: #2b4c7e;
+            border: 2px solid #2b4c7e;
             padding: 25px 20px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
