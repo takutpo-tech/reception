@@ -86,7 +86,6 @@
             font-weight: bold; 
         }
         
-        /* 画像閲覧ボタン */
         .img-view-btn {
             display: inline-flex;
             align-items: center;
@@ -103,32 +102,33 @@
             background-color: #e2e8f0;
         }
 
-        /* LINE画面内でその場表示するためのポップアップ用CSS */
+        /* ポップアップ表示用スタイル */
         .image-modal {
             display: none; 
             position: fixed;
             z-index: 1000;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); /* 背景を暗く */
+            background-color: rgba(0, 0, 0, 0.9); 
             justify-content: center;
             align-items: center;
         }
         .modal-content {
             max-width: 95%;
-            max-height: 85%;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            max-height: 80%;
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
             object-fit: contain;
         }
         .close-hint {
             position: absolute;
-            bottom: 30px;
-            color: #ccc;
-            font-size: 0.9em;
-            background: rgba(0,0,0,0.5);
-            padding: 6px 12px;
+            bottom: 40px;
+            color: #fff;
+            font-size: 0.95em;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
             border-radius: 20px;
+            font-weight: bold;
         }
 
         .loading { 
@@ -158,14 +158,15 @@
 
     <div id="photoModal" class="image-modal" onclick="closeModal()">
         <img id="modalImage" class="modal-content" src="" alt="受付票画像">
-        <div class="close-hint">画面をタップして閉じる</div>
+        <div class="close-hint">タップして閉じる</div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzVbQQL7MrZY35PrLD18EpfeXCczmz8zxJoMkAbwPS828_gCCmYAKrETSuv1FkHM9gSsA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzax8r52bNxLxPlyotNix4LLPrZljeQxkjRwYfaGHlP6Yo8FTfTzoQc9QA748DGnkLSmg/exec";
         const LIFF_ID = "2010292787-THrXgcKd"; 
 
         let userLineId = "";
+        let currentImages = {}; // 画像データを一時保持する用
 
         window.onload = function() {
             liff.init({ liffId: LIFF_ID }).then(() => {
@@ -198,6 +199,7 @@
 
             resultContainer.innerHTML = "";
             loading.style.display = "block";
+            currentImages = {}; // キャッシュリセット
 
             try {
                 const response = await fetch(`${GAS_URL}?name=${encodeURIComponent(name)}&userId=${userLineId}`);
@@ -215,7 +217,7 @@
                     return;
                 }
 
-                data.forEach(item => {
+                data.forEach((item, index) => {
                     let statusClass = "status-unknown";
                     if (item.status) {
                         if (item.status.indexOf("不成約") !== -1) {
@@ -225,20 +227,14 @@
                         }
                     }
 
-                    // ドライブアプリの起動を確実に阻止するボタン
                     let imageHtml = "-";
-                    if (item.imageUrl && item.imageUrl.startsWith("http")) {
-                        let fileId = "";
-                        if (item.imageUrl.indexOf("id=") !== -1) {
-                            fileId = item.imageUrl.split("id=")[1];
-                        }
-                        
-                        if (fileId) {
-                            let originalViewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
-                            // onclickで下の「openSecureLink」関数を呼び出すようにします
-                            imageHtml = `<button type="button" class="img-view-btn" onclick="openSecureLink('${originalViewUrl}')">👁 画像を表示</button>`;
+                    if (item.imageData) {
+                        if (item.imageData === "error") {
+                            imageHtml = "<span style='color:#dc3545; font-size:0.9em;'>⚠ 画像の取得権限がありません</span>";
                         } else {
-                            imageHtml = `<button type="button" class="img-view-btn" onclick="openSecureLink('${item.imageUrl}')">👁 画像を表示</button>`;
+                            // 一時オブジェクトに画像データを格納してインデックスで呼び出す
+                            currentImages[index] = item.imageData;
+                            imageHtml = `<button type="button" class="img-view-btn" onclick="openModal(${index})">👁 画像を表示</button>`;
                         }
                     }
 
@@ -264,12 +260,22 @@
             }
         }
 
-        // アプリへの強制ジャンプを「確認ダイアログ」でブロックして、LINE内で開く関数
-        function openSecureLink(url) {
-            // スマホのOSは、ユーザーが「はい」を押した後の遷移に対してはアプリ自動起動をかけられない仕様を利用します
-            if (confirm("LINE内で受付票画像を表示しますか？")) {
-                window.location.href = url; // targetは使わず、同一画面を書き換えてLINE内で開きます
+        // ポップアップを開く
+        function openModal(index) {
+            const modal = document.getElementById("photoModal");
+            const modalImg = document.getElementById("modalImage");
+            
+            if (currentImages[index]) {
+                modalImg.src = currentImages[index]; // Base64データをそのまま流し込む
+                modal.style.display = "flex";
             }
+        }
+
+        // ポップアップを閉じる
+        function closeModal() {
+            const modal = document.getElementById("photoModal");
+            modal.style.display = "none";
+            document.getElementById("modalImage").src = ""; 
         }
     </script>
 </body>
