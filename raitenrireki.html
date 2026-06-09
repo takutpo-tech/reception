@@ -102,7 +102,6 @@
             background-color: #e2e8f0;
         }
 
-        /* ポップアップ表示用スタイル */
         .image-modal {
             display: none; 
             position: fixed;
@@ -166,7 +165,7 @@
         const LIFF_ID = "2010292787-THrXgcKd"; 
 
         let userLineId = "";
-        let currentImages = {}; // 画像データを一時保持する用
+        let currentImages = {}; 
 
         window.onload = function() {
             liff.init({ liffId: LIFF_ID }).then(() => {
@@ -199,7 +198,7 @@
 
             resultContainer.innerHTML = "";
             loading.style.display = "block";
-            currentImages = {}; // キャッシュリセット
+            currentImages = {}; 
 
             try {
                 const response = await fetch(`${GAS_URL}?name=${encodeURIComponent(name)}&userId=${userLineId}`);
@@ -231,8 +230,9 @@
                     if (item.imageData) {
                         if (item.imageData === "error") {
                             imageHtml = "<span style='color:#dc3545; font-size:0.9em;'>⚠ 画像の取得権限がありません</span>";
+                        } else if (item.imageData === "id_not_found") {
+                            imageHtml = "<span style='color:#e6a23c; font-size:0.9em;'>⚠ URLから画像IDを抽出できません</span>";
                         } else {
-                            // 一時オブジェクトに画像データを格納してインデックスで呼び出す
                             currentImages[index] = item.imageData;
                             imageHtml = `<button type="button" class="img-view-btn" onclick="openModal(${index})">👁 画像を表示</button>`;
                         }
@@ -260,18 +260,26 @@
             }
         }
 
-        // ポップアップを開く
         function openModal(index) {
             const modal = document.getElementById("photoModal");
             const modalImg = document.getElementById("modalImage");
             
             if (currentImages[index]) {
-                modalImg.src = currentImages[index]; // Base64データをそのまま流し込む
+                modalImg.src = currentImages[index]; 
                 modal.style.display = "flex";
             }
         }
 
-        // ポップアップを閉じる
+        document.addEventListener("DOMContentLoaded", function() {
+            // iOSのダブルタップズーム防止対策を追加
+            document.getElementById("photoModal").addEventListener("touchend", function(e) {
+                // 画像そのもののタップでなければ閉じる
+                if(e.target.id !== "modalImage") {
+                    closeModal();
+                }
+            });
+        });
+
         function closeModal() {
             const modal = document.getElementById("photoModal");
             modal.style.display = "none";
