@@ -225,22 +225,29 @@
                         }
                     }
 
-                    // 確実にLINE内ブラウザで開くためのURL組み立て
+                    // 【超重要】OSにドライブアプリを起動させないための特殊なURL処理
                     let imageHtml = "-";
                     if (item.imageUrl && item.imageUrl.startsWith("http")) {
-                        let targetUrl = item.imageUrl;
+                        let fileId = "";
                         
-                        // GASから来たURLからファイルIDを取り出し、元のview用URLに安全に復元
+                        // GASから来たURLからファイルID（id=の後ろ）を抽出
                         if (item.imageUrl.indexOf("id=") !== -1) {
-                            let parts = item.imageUrl.split("id=");
-                            if (parts[1]) {
-                                targetUrl = `https://drive.google.com/file/d/${parts[1]}/view?usp=drivesdk`;
-                            }
+                            fileId = item.imageUrl.split("id=")[1];
                         }
                         
-                        // ボタンではなく、通常の <a> タグに変更。
-                        // target="_blank" を使わず、URLの末尾にLINE用のパラメータを明示して同一ウィンドウ内で開かせます
-                        imageHtml = `<a href="${targetUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
+                        if (fileId) {
+                            // 1. 本来開きたいプレビューURLを作る
+                            let originalViewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
+                            
+                            // 2. LINE専用のスキーム「https://liff.line.me/【LIFF_ID】/」の形に偽装する
+                            // これにより、スマホOSに邪魔されず、強制的にLINE内のサブウィンドウで開くようになります
+                            let liffOverrideUrl = `https://liff.line.me/${LIFF_ID}/link?url=${encodeURIComponent(originalViewUrl)}`;
+                            
+                            imageHtml = `<a href="${liffOverrideUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
+                        } else {
+                            // 万が一IDが抜けなかった場合はそのまま
+                            imageHtml = `<a href="${item.imageUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
+                        }
                     }
 
                     const itemHtml = `
