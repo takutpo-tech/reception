@@ -215,7 +215,6 @@
                     return;
                 }
 
-                // 取得データをループしてカードを生成（※修正箇所のみ抜粋。liff.openWindow を使います）
                 data.forEach(item => {
                     let statusClass = "status-unknown";
                     if (item.status) {
@@ -226,14 +225,21 @@
                         }
                     }
 
-                    // ボタンタップ時に、LINEの機能で安全にプレビュー画面を開く
+                    // 安全にURLを組み立てる処理
                     let imageHtml = "-";
                     if (item.imageUrl && item.imageUrl.startsWith("http")) {
-                        // GASで変換する前の元のドライブURL（view形式）に戻して開くための処理
-                        let fileId = item.imageUrl.split("id=")[1];
-                        let originalViewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
+                        let targetUrl = item.imageUrl;
                         
-                        imageHtml = `<button type="button" class="img-view-btn" onclick="openLineBrowser('${originalViewUrl}')">👁 画像を表示</button>`;
+                        // URLに id= が含まれている場合は、元のプレビューURLに復元を試みる
+                        if (item.imageUrl.indexOf("id=") !== -1) {
+                            let parts = item.imageUrl.split("id=");
+                            if (parts[1]) {
+                                targetUrl = `https://drive.google.com/file/d/${parts[1]}/view?usp=drivesdk`;
+                            }
+                        }
+                        
+                        // onclickの中身をスッキリさせてエラーを防ぐ
+                        imageHtml = `<button type="button" class="img-view-btn" data-url="${targetUrl}" onclick="openLineBrowser(this)">👁 画像を表示</button>`;
                     }
 
                     const itemHtml = `
@@ -258,19 +264,25 @@
             }
         }
 
-        // LINEのアプリ内ブラウザでGoogleドライブの安全なプレビュー画面を開く
-        function openLineBrowser(url) {
-            if (liff.isApiAvailable('openWindow')) {
-                liff.openWindow({
-                    url: url,
-                    external: false // ←ここをfalseにすることで、他アプリに飛ばずLINE内で開きます
-                });
-            } else {
+        // ボタン要素からURLを安全に引っこ抜いてLINE内ブラウザで開く
+        function openLineBrowser(element) {
+            const url = element.getAttribute("data-url");
+            if (!url) return;
+
+            try {
+                if (liff.openWindow) {
+                    liff.openWindow({
+                        url: url,
+                        external: false
+                    });
+                } else {
+                    window.open(url, '_blank');
+                }
+            } catch (e) {
+                // 万が一LIFF機能が失敗したら通常のブラウザ展開に逃げる
                 window.open(url, '_blank');
             }
         }
-        
-        // ※以前使用していた openModal / closeModal 関数は不要（削除してOK）です
     </script>
 </body>
 </html>
