@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顧客データ検索</title>
+    <style>
+        /* スマートフォン（LINE内ブラウザ）に最適化した基本スタイル */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 15px; 
+            background-color: #f4f6f9; 
+            color: #333; 
+            margin: 0; 
+        }
+        h2 { 
+            font-size: 1.2em; 
+            margin-top: 5px;
+            margin-bottom: 15px; 
+            color: #111;
+        }
+        /* 検索ボックス */
+        .search-box { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 20px; 
+        }
+        input[type="text"] { 
+            flex: 1; 
+            padding: 12px; 
+            font-size: 16px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box;
+        }
+        button { 
+            padding: 12px 20px; 
+            font-size: 16px; 
+            background-color: #06C755; /* LINEカラー */
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #05a647;
+        }
+        /* 結果表示カード */
+        .result-card { 
+            background: white; 
+            padding: 16px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05); 
+            margin-bottom: 15px; 
+            border-left: 5px solid #007AFF; 
+        }
+        .result-header { 
+            font-weight: bold; 
+            font-size: 1.1em; 
+            margin-bottom: 10px; 
+            border-bottom: 1px solid #f0f0f0; 
+            padding-bottom: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        /* 成約・不成約バッジ */
+        .status-badge { 
+            font-size: 0.8em; 
+            padding: 3px 8px; 
+            border-radius: 4px; 
+            color: white; 
+            font-weight: bold;
+        }
+        .status-success { background-color: #28a745; } /* 成約 */
+        .status-danger { background-color: #dc3545; }  /* 不成約 */
+        .status-unknown { background-color: #6c757d; } /* 未入力など */
+        
+        /* 2列グリッドのデータ配置 */
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: 80px 1fr; 
+            gap: 6px 10px; 
+            font-size: 0.95em; 
+            line-height: 1.4;
+        }
+        .label { 
+            color: #666; 
+            font-weight: bold; 
+        }
+        .value {
+            color: #222;
+        }
+        /* ローディング・メッセージ記述 */
+        .loading { 
+            text-align: center; 
+            color: #666; 
+            margin-top: 30px; 
+            font-size: 0.95em;
+        }
+        .error-msg {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+
+    <h2>顧客データ検索</h2>
+    <div class="search-box">
+        <input type="text" id="customerName" placeholder="顧客名を入力">
+        <button onclick="searchCustomer()">検索</button>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">データを検索中...</div>
+    <div id="resultContainer"></div>
+
+    <script>
+        // ==========================================
+        // 設定値の書き換え
+        // ==========================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyL2anQ_G2Wscpr6giygA3zAE6dGi3zY6yi9viSJ0GEsceCi9JfW1xMWDs1-XaOodguQg/exec";
+        const LIFF_ID = "★ここに今回のシステムのLIFF IDを貼り付ける★"; 
+
+        let userLineId = "";
+
+        // ページ読み込み時にLIFFを初期化し、LINE IDを自動取得
+        window.onload = function() {
+            liff.init({ liffId: LIFF_ID }).then(() => {
+                if (liff.isLoggedIn()) {
+                    liff.getProfile().then(profile => {
+                        userLineId = profile.userId;
+                    });
+                } else {
+                    liff.login(); // ログインしていない場合はLINEのログイン画面へ誘導
+                }
+            }).catch((err) => {
+                console.error("LIFF初期化失敗", err);
+                document.getElementById("resultContainer").innerHTML = "<p class='error-msg'>LIFFの初期化に失敗しました。</p>";
+            });
+        };
+
+        // 検索処理
+        async function searchCustomer() {
+            const name = document.getElementById("customerName").value.trim();
+            const resultContainer = document.getElementById("resultContainer");
+            const loading = document.getElementById("loading");
+
+            if (!name) {
+                alert("顧客名を入力してください");
+                return;
+            }
+            if (!userLineId) {
+                alert("LINE IDが取得できていません。画面を再読み込みしてください。");
+                return;
+            }
+
+            // 初期化
+            resultContainer.innerHTML = "";
+            loading.style.display = "block";
+
+            try {
+                // GASのdoGetへ「検索名」と「LINEユーザーID」を送信
+                const response = await fetch(`${GAS_URL}?name=${encodeURIComponent(name)}&userId=${userLineId}`);
+                const data = await response.json();
+
+                loading.style.display = "none";
+
+                // GAS側でエラーが返ってきた場合のハンドリング
+                if (data.error) {
+                    resultContainer.innerHTML = `<p class='error-msg'>${data.error}</p>`;
+                    return;
+                }
+
+                // 該当データがない場合
+                if (data.length === 0) {
+                    resultContainer.innerHTML = "<p style='text-align:center; color:#999; margin-top:30px;'>該当する顧客データが見つかりませんでした。</p>";
+                    return;
+                }
+
+                // 取得データをループしてカードを生成
+                data.forEach(item => {
+                    // 成約状況（S列）に応じたバッジのクラス判定
+                    let statusClass = "status-unknown";
+                    if (item.status) {
+                        if (item.status.indexOf("不成約") !== -1) {
+                            statusClass = "status-danger";
+                        } else if (item.status.indexOf("成約") !== -1) {
+                            statusClass = "status-success";
+                        }
+                    }
+
+                    // 金額（R列）の三桁カンマ区切り整形
+                    let formattedPrice = "-";
+                    if (item.price !== "" && !isNaN(item.price)) {
+                        formattedPrice = `¥${Number(item.price).toLocaleString()}`;
+                    } else if (item.price) {
+                        formattedPrice = item.price; // 数値でない文字列が入っている場合はそのまま表示
+                    }
+
+                    const itemHtml = `
+                        <div class="result-card">
+                            <div class="result-header">
+                                <span>👤 ${item.name} 様</span>
+                                <span class="status-badge ${statusClass}">${item.status || '未入力'}</span>
+                            </div>
+                            <div class="info-grid">
+                                <div class="label">日付</div><div class="value">${item.date || '-'}</div>
+                                <div class="label">属性</div><div class="value">${item.age || '-'} / ${item.job || '-'}</div>
+                                <div class="label">住所</div><div class="value">${item.address || '-'}</div>
+                                <div class="label">査定品</div><div class="value"><strong>${item.item || '-'}</strong></div>
+                                <div class="label">提示額</div><div class="value" style="font-weight:bold; color:#d97706;">${formattedPrice}</div>
+                                <div class="label">粗利率</div><div class="value">${item.rate || '-'}</div>
+                                <div class="label">理由</div><div class="value" style="color: #dc3545;">${item.reason || '-'}</div>
+                            </div>
+                        </div>
+                    `;
+                    resultContainer.insertAdjacentHTML('beforeend', itemHtml);
+                });
+
+            } catch (error) {
+                loading.style.display = "none";
+                alert("データの取得に失敗しました。ネットワーク状況を確認してください。");
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
