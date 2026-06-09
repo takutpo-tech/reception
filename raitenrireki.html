@@ -225,28 +225,20 @@
                         }
                     }
 
-                    // 【超重要】OSにドライブアプリを起動させないための特殊なURL処理
+                    // ドライブアプリの起動を確実に阻止するボタン
                     let imageHtml = "-";
                     if (item.imageUrl && item.imageUrl.startsWith("http")) {
                         let fileId = "";
-                        
-                        // GASから来たURLからファイルID（id=の後ろ）を抽出
                         if (item.imageUrl.indexOf("id=") !== -1) {
                             fileId = item.imageUrl.split("id=")[1];
                         }
                         
                         if (fileId) {
-                            // 1. 本来開きたいプレビューURLを作る
                             let originalViewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
-                            
-                            // 2. LINE専用のスキーム「https://liff.line.me/【LIFF_ID】/」の形に偽装する
-                            // これにより、スマホOSに邪魔されず、強制的にLINE内のサブウィンドウで開くようになります
-                            let liffOverrideUrl = `https://liff.line.me/${LIFF_ID}/link?url=${encodeURIComponent(originalViewUrl)}`;
-                            
-                            imageHtml = `<a href="${liffOverrideUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
+                            // onclickで下の「openSecureLink」関数を呼び出すようにします
+                            imageHtml = `<button type="button" class="img-view-btn" onclick="openSecureLink('${originalViewUrl}')">👁 画像を表示</button>`;
                         } else {
-                            // 万が一IDが抜けなかった場合はそのまま
-                            imageHtml = `<a href="${item.imageUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
+                            imageHtml = `<button type="button" class="img-view-btn" onclick="openSecureLink('${item.imageUrl}')">👁 画像を表示</button>`;
                         }
                     }
 
@@ -269,6 +261,14 @@
                 loading.style.display = "none";
                 alert("データの取得に失敗しました。");
                 console.error(error);
+            }
+        }
+
+        // アプリへの強制ジャンプを「確認ダイアログ」でブロックして、LINE内で開く関数
+        function openSecureLink(url) {
+            // スマホのOSは、ユーザーが「はい」を押した後の遷移に対してはアプリ自動起動をかけられない仕様を利用します
+            if (confirm("LINE内で受付票画像を表示しますか？")) {
+                window.location.href = url; // targetは使わず、同一画面を書き換えてLINE内で開きます
             }
         }
     </script>
