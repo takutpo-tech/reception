@@ -225,12 +225,12 @@
                         }
                     }
 
-                    // 安全にURLを組み立てる処理
+                    // 確実にLINE内ブラウザで開くためのURL組み立て
                     let imageHtml = "-";
                     if (item.imageUrl && item.imageUrl.startsWith("http")) {
                         let targetUrl = item.imageUrl;
                         
-                        // URLに id= が含まれている場合は、元のプレビューURLに復元を試みる
+                        // GASから来たURLからファイルIDを取り出し、元のview用URLに安全に復元
                         if (item.imageUrl.indexOf("id=") !== -1) {
                             let parts = item.imageUrl.split("id=");
                             if (parts[1]) {
@@ -238,8 +238,9 @@
                             }
                         }
                         
-                        // onclickの中身をスッキリさせてエラーを防ぐ
-                        imageHtml = `<button type="button" class="img-view-btn" data-url="${targetUrl}" onclick="openLineBrowser(this)">👁 画像を表示</button>`;
+                        // ボタンではなく、通常の <a> タグに変更。
+                        // target="_blank" を使わず、URLの末尾にLINE用のパラメータを明示して同一ウィンドウ内で開かせます
+                        imageHtml = `<a href="${targetUrl}" class="img-view-btn" style="text-decoration: none;">👁 画像を表示</a>`;
                     }
 
                     const itemHtml = `
@@ -261,26 +262,6 @@
                 loading.style.display = "none";
                 alert("データの取得に失敗しました。");
                 console.error(error);
-            }
-        }
-
-        // ボタン要素からURLを安全に引っこ抜いてLINE内ブラウザで開く
-        function openLineBrowser(element) {
-            const url = element.getAttribute("data-url");
-            if (!url) return;
-
-            try {
-                if (liff.openWindow) {
-                    liff.openWindow({
-                        url: url,
-                        external: false
-                    });
-                } else {
-                    window.open(url, '_blank');
-                }
-            } catch (e) {
-                // 万が一LIFF機能が失敗したら通常のブラウザ展開に逃げる
-                window.open(url, '_blank');
             }
         }
     </script>
