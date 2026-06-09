@@ -215,6 +215,7 @@
                     return;
                 }
 
+                // 取得データをループしてカードを生成（※修正箇所のみ抜粋。liff.openWindow を使います）
                 data.forEach(item => {
                     let statusClass = "status-unknown";
                     if (item.status) {
@@ -225,10 +226,14 @@
                         }
                     }
 
-                    // ボタンタップ時に、その場でポップアップを開くJavaScript関数を呼び出すように変更
+                    // ボタンタップ時に、LINEの機能で安全にプレビュー画面を開く
                     let imageHtml = "-";
                     if (item.imageUrl && item.imageUrl.startsWith("http")) {
-                        imageHtml = `<button type="button" class="img-view-btn" onclick="openModal('${item.imageUrl}')">👁 画像を表示</button>`;
+                        // GASで変換する前の元のドライブURL（view形式）に戻して開くための処理
+                        let fileId = item.imageUrl.split("id=")[1];
+                        let originalViewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
+                        
+                        imageHtml = `<button type="button" class="img-view-btn" onclick="openLineBrowser('${originalViewUrl}')">👁 画像を表示</button>`;
                     }
 
                     const itemHtml = `
@@ -253,20 +258,19 @@
             }
         }
 
-        // ポップアップを開く
-        function openModal(imgUrl) {
-            const modal = document.getElementById("photoModal");
-            const modalImg = document.getElementById("modalImage");
-            modalImg.src = imgUrl;
-            modal.style.display = "flex";
+        // LINEのアプリ内ブラウザでGoogleドライブの安全なプレビュー画面を開く
+        function openLineBrowser(url) {
+            if (liff.isApiAvailable('openWindow')) {
+                liff.openWindow({
+                    url: url,
+                    external: false // ←ここをfalseにすることで、他アプリに飛ばずLINE内で開きます
+                });
+            } else {
+                window.open(url, '_blank');
+            }
         }
-
-        // ポップアップを閉じる
-        function closeModal() {
-            const modal = document.getElementById("photoModal");
-            modal.style.display = "none";
-            document.getElementById("modalImage").src = ""; // メモリ解放のためにsrcを空にする
-        }
+        
+        // ※以前使用していた openModal / closeModal 関数は不要（削除してOK）です
     </script>
 </body>
 </html>
